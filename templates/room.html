@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat Application</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+    
+    :root {
+      --primary: #6366f1;
+      --primary-dark: #4f46e5;
+      --secondary: #f43f5e;
+      --dark: #1e293b;
+      --light: #f8fafc;
+    }
+    
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #f1f5f9;
+    }
+    
+    /* Animation pour les nouveaux messages */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .message-animation {
+      animation: fadeIn 0.3s ease-out forwards;
+    }
+    
+    /* Barre de défilement personnalisée */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 10px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+      background: #a8a8a8;
+    }
+    
+    /* Style pour les fichiers */
+    .file-card {
+      transition: all 0.2s ease;
+    }
+    
+    .file-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Style pour l'upload */
+    .upload-dropzone {
+      border: 2px dashed #cbd5e1;
+      transition: all 0.2s ease;
+    }
+    
+    .upload-dropzone.active {
+      border-color: var(--primary);
+      background-color: rgba(99, 102, 241, 0.05);
+    }
+    
+    /* Style pour les emojis */
+    .emoji-picker {
+      transition: all 0.3s ease;
+      transform-origin: bottom right;
+    }
+    
+    .emoji-picker.hidden {
+      opacity: 0;
+      transform: scale(0.8);
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center py-8 px-4">
+  <!-- En-tête -->
+  <div class="w-full max-w-4xl mb-6 flex justify-between items-center">
+    <div class="flex items-center">
+      <div class="relative">
+        <div class="w-12 h-12 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 flex items-center justify-center text-white">
+          <i class="fas fa-comments text-xl"></i>
+        </div>
+        <span class="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white"></span>
+      </div>
+      <div class="ml-4">
+        <h1 class="text-2xl font-bold text-gray-800">{{room}}</h1>
+        <p class="text-sm text-gray-500 flex items-center">
+          <span class="w-2 h-2 bg-green-500 rounded-full mr-1"></span>
+          <span id="online-count">3 en ligne</span>
+        </p>
+      </div>
+    </div>
+    <div class="flex space-x-3">
+      <button class="p-2 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">
+        <i class="fas fa-search"></i>
+      </button>
+      <button class="p-2 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">
+        <i class="fas fa-ellipsis-v"></i>
+      </button>
+      <a href="{% url 'home' %}" class="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-lg shadow hover:shadow-md transition-all duration-300 flex items-center">
+        <i class="fas fa-exchange-alt mr-2"></i>
+        Changer
+      </a>
+    </div>
+  </div>
+
+  <!-- Zone de messages -->
+  <div id="display" class="w-full max-w-4xl h-[500px] bg-white rounded-xl shadow-lg overflow-hidden flex flex-col">
+    <div class="p-4 bg-gradient-to-r from-indigo-500 to-purple-500 text-white flex justify-between items-center">
+      <h2 class="font-medium flex items-center">
+        <i class="fas fa-comment-dots mr-2"></i>
+        <span>Messages</span>
+        <span class="ml-2 text-xs bg-white bg-opacity-20 px-2 py-1 rounded-full">Groupe public</span>
+      </h2>
+      <div class="flex items-center space-x-2">
+        <button id="scroll-to-bottom" class="p-1 rounded-full bg-white bg-opacity-20 hover:bg-opacity-30 transition-colors">
+          <i class="fas fa-arrow-down text-xs"></i>
+        </button>
+        <button class="p-1 rounded-full bg-white bg-opacity-20 hover:bg-opacity-30 transition-colors">
+          <i class="fas fa-cog text-xs"></i>
+        </button>
+      </div>
+    </div>
+    
+    <div id="messages-container" class="flex-1 overflow-y-auto p-4 space-y-4">
+      <div class="text-center text-gray-500 py-10">
+        <i class="fas fa-comment-slash text-3xl mb-2"></i>
+        <p>Aucun message présent</p>
+        <p class="text-sm mt-2">Commencez la conversation !</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Zone de saisie -->
+  <div class="w-full max-w-4xl mt-6">
+    <form id="post-form" class="bg-white rounded-xl shadow-lg overflow-hidden">
+      {% csrf_token %}
+      <input type="hidden" name="username" id="username" value="{{username}}"/>
+      <input type="hidden" name="room_id" id="room_id" value="{{room_details.id}}"/>
+      
+      <!-- Zone d'upload (masquée par défaut) -->
+      <div id="upload-container" class="upload-dropzone hidden p-4 rounded-t-lg">
+        <div class="text-center">
+          <i class="fas fa-cloud-upload-alt text-4xl text-indigo-500 mb-2"></i>
+          <p class="font-medium">Glissez-déposez vos fichiers ici</p>
+          <p class="text-sm text-gray-500 mt-1">ou cliquez pour sélectionner</p>
+          <input type="file" id="file-upload" class="hidden" multiple>
+          <button type="button" id="browse-files" class="mt-3 px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors">
+            Parcourir les fichiers
+          </button>
+        </div>
+        <div id="file-preview" class="mt-4 grid grid-cols-2 gap-3 hidden">
+          <!-- Prévisualisation des fichiers -->
+        </div>
+      </div>
+      
+      <!-- Zone de texte principale -->
+      <div class="p-4">
+        <div class="relative">
+          <div id="emoji-picker" class="emoji-picker hidden absolute bottom-12 right-0 w-64 h-72 bg-white rounded-lg shadow-xl z-10 border border-gray-200 overflow-hidden">
+            <div class="h-full overflow-y-auto p-2">
+              <!-- Les emojis seraient chargés ici via JavaScript -->
+              <div class="text-center py-10 text-gray-400">
+                <i class="fas fa-smile text-2xl mb-2"></i>
+                <p>Sélectionnez un emoji</p>
+              </div>
+            </div>
+          </div>
+          
+          <textarea name="message" id="message" rows="1"
+                 class="w-full pl-4 pr-12 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 resize-none"
+                 placeholder="Écrivez votre message ici..." 
+                 autocomplete="off"></textarea>
+          
+          <div class="absolute right-2 top-1/2 transform -translate-y-1/2 flex space-x-1">
+            <button type="button" id="emoji-btn" class="text-gray-500 hover:text-indigo-500 transition-colors duration-200 p-1">
+              <i class="far fa-smile"></i>
+            </button>
+            <button type="button" id="upload-btn" class="text-gray-500 hover:text-indigo-500 transition-colors duration-200 p-1">
+              <i class="fas fa-paperclip"></i>
+            </button>
+            <button type="submit" class="text-indigo-500 hover:text-indigo-700 p-1">
+              <i class="fas fa-paper-plane"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Barre d'outils inférieure -->
+      <div class="px-4 py-3 bg-gray-50 flex justify-between items-center border-t border-gray-200">
+        <div class="flex space-x-2">
+          <button type="button" class="text-gray-500 hover:text-indigo-500 transition-colors duration-200 p-1">
+            <i class="fas fa-microphone"></i>
+          </button>
+          <button type="button" class="text-gray-500 hover:text-indigo-500 transition-colors duration-200 p-1">
+            <i class="fas fa-image"></i>
+          </button>
+          <button type="button" class="text-gray-500 hover:text-indigo-500 transition-colors duration-200 p-1">
+            <i class="fas fa-video"></i>
+          </button>
+        </div>
+        <span class="text-xs text-gray-400">
+          <span id="char-count">0/500</span> • Appuyez sur <kbd class="px-1 py-0.5 bg-gray-200 rounded">Shift+Entrée</kbd> pour aller à la ligne
+        </span>
+      </div>
+    </form>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+    $(document).ready(function(){
+      const display = $("#messages-container");
+      const messageInput = $("#message");
+      const charCount = $("#char-count");
+      const uploadContainer = $("#upload-container");
+      const fileUpload = $("#file-upload");
+      const filePreview = $("#file-preview");
+      const browseFiles = $("#browse-files");
+      const uploadBtn = $("#upload-btn");
+      const emojiBtn = $("#emoji-btn");
+      const emojiPicker = $("#emoji-picker");
+      const scrollToBottomBtn = $("#scroll-to-bottom");
+      
+      let isUploading = false;
+      
+      // Fonction pour vérifier si on est en bas de la zone de chat
+      const isAtBottom = () => {
+        const container = display[0];
+        return container.scrollTop + container.clientHeight >= container.scrollHeight - 20;
+      };
+      
+      // Fonction pour formater la date
+      const formatDate = (dateString) => {
+        const date = new Date(dateString);
+        const now = new Date();
+        
+        const isToday = date.getDate() === now.getDate() && 
+                        date.getMonth() === now.getMonth() && 
+                        date.getFullYear() === now.getFullYear();
+        
+        const options = {
+          hour: '2-digit',
+          minute: '2-digit',
+          ...(!isToday && { 
+            day: 'numeric', 
+            month: 'short',
+            year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+          })
+        };
+        
+        return date.toLocaleString('fr-FR', options);
+      };
+      
+      // Fonction pour afficher un message
+      const displayMessage = (message) => {
+        const isCurrentUser = message.user === $('#username').val();
+        const formattedDate = formatDate(message.date);
+        
+        // Vérifier si c'est un fichier
+        const isFile = message.file_url !== undefined;
+        
+        let contentHtml = '';
+        
+        if (isFile) {
+          // Déterminer le type de fichier
+          const fileExt = message.file_url.split('.').pop().toLowerCase();
+          let fileIcon = 'fa-file';
+          let previewHtml = '';
+          
+          if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExt)) {
+            fileIcon = 'fa-image';
+            previewHtml = `<img src="${message.file_url}" alt="Image" class="w-full h-32 object-cover rounded-lg mb-2">`;
+          } else if (['mp4', 'mov', 'avi', 'webm'].includes(fileExt)) {
+            fileIcon = 'fa-video';
+            previewHtml = `
+              <div class="relative w-full h-32 bg-gray-200 rounded-lg mb-2 flex items-center justify-center">
+                <i class="fas fa-video text-2xl text-gray-500"></i>
+                <div class="absolute bottom-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                  ${message.file_size || ''}
+                </div>
+              </div>
+            `;
+          } else if (['mp3', 'wav', 'ogg'].includes(fileExt)) {
+            fileIcon = 'fa-music';
+            previewHtml = `
+              <div class="w-full h-32 bg-gray-200 rounded-lg mb-2 flex items-center justify-center">
+                <i class="fas fa-music text-2xl text-gray-500"></i>
+              </div>
+            `;
+          } else if (['pdf'].includes(fileExt)) {
+            fileIcon = 'fa-file-pdf';
+          } else if (['doc', 'docx'].includes(fileExt)) {
+            fileIcon = 'fa-file-word';
+          } else if (['xls', 'xlsx'].includes(fileExt)) {
+            fileIcon = 'fa-file-excel';
+          } else if (['ppt', 'pptx'].includes(fileExt)) {
+            fileIcon = 'fa-file-powerpoint';
+          } else if (['zip', 'rar', '7z'].includes(fileExt)) {
+            fileIcon = 'fa-file-archive';
+          }
+          
+          contentHtml = `
+            <div class="file-card bg-white border border-gray-200 rounded-lg overflow-hidden">
+              ${previewHtml}
+              <div class="p-3">
+                <div class="flex items-center">
+                  <i class="fas ${fileIcon} text-indigo-500 mr-2"></i>
+                  <div class="truncate flex-1">
+                    <p class="text-sm font-medium truncate">${message.file_name || 'Fichier'}</p>
+                    <p class="text-xs text-gray-500">${message.file_size || ''} • ${fileExt.toUpperCase()}</p>
+                  </div>
+                </div>
+                <a href="${message.file_url}" download class="mt-2 w-full block text-center py-1 bg-indigo-50 text-indigo-600 text-sm rounded hover:bg-indigo-100 transition-colors">
+                  <i class="fas fa-download mr-1"></i> Télécharger
+                </a>
+              </div>
+            </div>
+          `;
+        } else {
+          contentHtml = `<p class="mt-1 text-sm ${isCurrentUser ? '' : 'text-gray-700'}">${message.value}</p>`;
+        }
+        
+        const messageHtml = `
+          <div class="message-animation flex ${isCurrentUser ? 'justify-end' : 'justify-start'}">
+            <div class="max-w-xs md:max-w-md lg:max-w-lg ${isFile ? 'w-full' : ''}">
+              ${!isCurrentUser && !isFile ? `
+                <span class="font-semibold text-sm text-gray-700">${message.user}</span>
+              ` : ''}
+              <div class="rounded-lg p-3 mt-1 ${isCurrentUser ? 
+                'bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-br-none' : 
+                'bg-gray-100 text-gray-800 rounded-bl-none'}">
+                ${contentHtml}
+                <div class="flex items-center justify-end mt-2 space-x-2">
+                  <span class="text-xs ${isCurrentUser ? 'text-indigo-100' : 'text-gray-500'}">
+                    ${formattedDate}
+                  </span>
+                  ${isCurrentUser ? `
+                    <span class="text-xs ${isCurrentUser ? 'text-indigo-100' : 'text-gray-500'}">
+                      <i class="fas fa-check ${message.read ? 'text-blue-300' : ''}"></i>
+                    </span>
+                  ` : ''}
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        return messageHtml;
+      };
+      
+      // Auto-refresh des messages
+      const refreshMessages = function(){
+        $.ajax({
+          type: 'GET',
+          url: "/getMessages/{{room}}/",
+          success: function(response){
+            const wasAtBottom = isAtBottom();
+            
+            display.empty();
+            
+            if (response.messages.length === 0) {
+              display.html(`
+                <div class="text-center text-gray-500 py-10">
+                  <i class="fas fa-comment-slash text-3xl mb-2"></i>
+                  <p>Aucun message présent</p>
+                </div>
+              `);
+              return;
+            }
+            
+            for (const message of response.messages) {
+              display.append(displayMessage(message));
+            }
+            
+            if (wasAtBottom) {
+              display.scrollTop(display[0].scrollHeight);
+            }
+          },
+          error: function(){
+            console.error('Erreur de récupération des messages');
+          }
+        });
+      };
+      
+      setInterval(refreshMessages, 1000);
+      
+      // Envoi des messages
+      $(document).on('submit','#post-form',function(e){
+        e.preventDefault();
+        const message = messageInput.val().trim();
+        
+        if (message === '' && !isUploading) return;
+        
+        $.ajax({
+          type: 'POST',
+          url: '/send',
+          data: {
+            username: $('#username').val(),
+            room_id: $('#room_id').val(),
+            message: message,
+            csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val(),
+          },
+          success: function(data){
+            messageInput.val('');
+            charCount.text('0/500');
+            refreshMessages();
+          }
+        });
+      });
+      
+      // Gestion de la zone de texte
+      messageInput.on('input', function() {
+        const text = $(this).val();
+        const count = text.length;
+        charCount.text(`${count}/500`);
+        
+        // Ajuster la hauteur automatiquement
+        this.style.height = 'auto';
+        this.style.height = (this.scrollHeight) + 'px';
+      });
+      
+      // Envoyer avec la touche Entrée (Shift+Entrée pour aller à la ligne)
+      messageInput.keydown(function(e){
+        if(e.which === 13 && !e.shiftKey) {
+          e.preventDefault();
+          $('#post-form').submit();
+        }
+      });
+      
+      // Bouton pour aller en bas
+      scrollToBottomBtn.click(function() {
+        display.scrollTop(display[0].scrollHeight);
+      });
+      
+      // Afficher/masquer le sélecteur d'emoji
+      emojiBtn.click(function(e) {
+        e.stopPropagation();
+        emojiPicker.toggleClass('hidden');
+      });
+      
+      // Masquer le sélecteur d'emoji quand on clique ailleurs
+      $(document).click(function() {
+        emojiPicker.addClass('hidden');
+      });
+      
+      // Gestion de l'upload de fichiers
+      uploadBtn.click(function() {
+        uploadContainer.toggleClass('hidden');
+        filePreview.addClass('hidden');
+      });
+      
+      browseFiles.click(function() {
+        fileUpload.click();
+      });
+      
+      fileUpload.change(function(e) {
+        const files = e.target.files;
+        if (files.length > 0) {
+          filePreview.empty();
+          
+          for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const fileExt = file.name.split('.').pop().toLowerCase();
+            let fileIcon = 'fa-file';
+            
+            if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExt)) {
+              fileIcon = 'fa-image';
+              const reader = new FileReader();
+              reader.onload = function(e) {
+                $(`#preview-${i}`).html(`<img src="${e.target.result}" class="w-full h-32 object-cover rounded-lg">`);
+              };
+              reader.readAsDataURL(file);
+            }
+            
+            filePreview.append(`
+              <div id="preview-${i}" class="file-card bg-white border border-gray-200 rounded-lg overflow-hidden">
+                <div class="w-full h-32 bg-gray-100 rounded-lg flex items-center justify-center">
+                  <i class="fas ${fileIcon} text-2xl text-gray-400"></i>
+                </div>
+                <div class="p-2">
+                  <p class="text-sm font-medium truncate">${file.name}</p>
+                  <p class="text-xs text-gray-500">${(file.size / 1024).toFixed(1)} KB</p>
+                </div>
+              </div>
+            `);
+          }
+          
+          filePreview.removeClass('hidden');
+          isUploading = true;
+        }
+      });
+      
+      // Drag and drop pour les fichiers
+      uploadContainer.on('dragover', function(e) {
+        e.preventDefault();
+        $(this).addClass('active');
+      });
+      
+      uploadContainer.on('dragleave', function(e) {
+        e.preventDefault();
+        $(this).removeClass('active');
+      });
+      
+      uploadContainer.on('drop', function(e) {
+        e.preventDefault();
+        $(this).removeClass('active');
+        
+        const files = e.originalEvent.dataTransfer.files;
+        if (files.length > 0) {
+          fileUpload[0].files = files;
+          fileUpload.trigger('change');
+        }
+      });
+    });
+  </script>
+</body>
+</html>
