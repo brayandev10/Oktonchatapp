@@ -1,0 +1,426 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CodeZone - Snippets Utiles Multilangages</title>
+  
+  <meta property="og:image" content="{{ request.build_absolute_uri }}{% static 'ton_app/file_00000000e6dc61f892653be5b6256447_conversation_id=6820d600-fb80-8010-bcad-e76a3e1dab1b%26message_id=123703f2-52e9-4850-9d3d-64bcf00a2dd4.png' %}">
+  
+  <link rel="icon" type="image/png" href="{% static 'Icone/file_00000000e6dc61f892653be5b6256447_conversation_id=6820d600-fb80-8010-bcad-e76a3e1dab1b&message_id=123703f2-52e9-4850-9d3d-64bcf00a2dd4.png' %}">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.0/ace.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.0/ext-language_tools.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    .toast { position: fixed; bottom: 20px; right: 20px; background: #333; color: white; padding: 12px 20px; border-radius: 8px; opacity: 0; transition: opacity 0.3s; z-index: 1000; }
+    .toast.show { opacity: 1; }
+    .dark-mode { background: #1f2937; color: #e5e7eb; }
+    .dark-mode .code-block { background: #374151; }
+    .dark-mode .code-header { background: #4b5563; }
+    .dark-mode .bg-gray-50 { background: #111827; }
+    .dark-mode .bg-white { background: #1f2937; }
+  </style>
+</head>
+<body class="bg-gray-100 font-sans transition-colors duration-300">
+  <!-- Barre de navigation -->
+  <nav class="bg-indigo-700 text-white p-4 sticky top-0 shadow-md">
+    <div class="max-w-7xl mx-auto flex justify-between items-center">
+      <a href="/" class="text-2xl font-bold">CodeZone</a>
+      <div class="space-x-4">
+        <a href="#home" class="hover:text-indigo-200">Accueil</a>
+        <a href="#snippets" class="hover:text-indigo-200">Snippets</a>
+        <a href="#add-snippet" id="addSnippetLink" class="hover:text-indigo-200 hidden">Ajouter un snippet</a>
+        <a href="#favorites" id="favoritesLink" class="hover:text-indigo-200 hidden">Favoris</a>
+        <a href="#profile" id="profileLink" class="hover:text-indigo-200 hidden">profil</a>
+        <button id="logoutBtn" class="hover:text-indigo-200 hidden">Déconnexion</button>
+        <button id="themeToggle" class="hover:text-indigo-200" aria-label="Basculer mode sombre">
+          <i class="fas fa-moon"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Section Hero -->
+  <section id="home" class="bg-indigo-50 py-16 text-center">
+    <div class="max-w-4xl mx-auto">
+      <h1 class="text-4xl font-bold text-indigo-700 mb-4">Bienvenue sur CodeZone {{ request.user.username }}</h1>
+      <p class="text-lg text-gray-600 mb-6">Partagez, découvrez et gérez vos snippets de code dans tous les langages.</p>
+      <a href="#snippets" class="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700">Voir les snippets</a>
+      {% if user.is_authenticated %}
+    
+    <a href="{% url 'logout' %}" class="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700">Déconnexion</a><br><br>
+    <a href="{% url 'home' %}" class="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700">discutons en communauté</a>
+    
+{% else %}
+    <a href="{% url 'register' %}" class="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700">rejoignez nous</a>
+{% endif %}
+       
+    </div>
+  </section>
+
+  <!-- Section Snippets -->
+  <section id="snippets" class="py-12 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="flex flex-col md:flex-row gap-4 mb-8 max-w-2xl mx-auto">
+        <input id="searchInput" type="text" placeholder="Rechercher un snippet..." class="flex-1 px-4 py-2 border rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-indigo-500" aria-label="Rechercher un snippet" />
+        <select id="langFilter" class="px-4 py-2 border rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-indigo-500" aria-label="Filtrer par langage">
+          <option value="">Tous les langages</option>
+          <option value="html">HTML</option>
+          <option value="css">CSS</option>
+          <option value="javascript">JavaScript</option>
+          <option value="react">React</option>
+          <option value="python">Python</option>
+          <option value="sql">SQL</option>
+          <option value="bash">Bash</option>
+        </select>
+      </div>
+      <div id="snippetsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+      <div id="pagination" class="mt-8 flex justify-center space-x-2"></div>
+    </div>
+  </section>
+
+  <!-- Formulaire d'ajout de snippet -->
+  <section id="add-snippet" class="py-12 bg-gray-50 hidden">
+    <div class="max-w-md mx-auto bg-white p-8 rounded-lg shadow-lg">
+      <h2 class="text-2xl font-bold text-indigo-700 mb-6">Ajouter un snippet</h2>
+      <form id="addSnippetForm">
+        <div class="mb-4">
+          <label for="snippetName" class="block text-gray-700">Nom du snippet</label>
+          <input type="text" id="snippetName" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div class="mb-4">
+          <label for="snippetLang" class="block text-gray-700">Langage</label>
+          <select id="snippetLang" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="html">HTML</option>
+            <option value="css">CSS</option>
+            <option value="javascript">JavaScript</option>
+            <option value="react">React</option>
+            <option value="python">Python</option>
+            <option value="sql">SQL</option>
+            <option value="bash">Bash</option>
+          </select>
+        </div>
+        <div class="mb-6">
+          <label for="snippetCode" class="block text-gray-700">Code</label>
+          <textarea id="snippetCode" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 h-32"></textarea>
+        </div>
+        <button type="submit" class="w-full bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">Ajouter</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- Section Favoris -->
+  <section id="favorites" class="py-12 bg-gray-50 hidden">
+    <div class="max-w-7xl mx-auto px-4">
+      <h2 class="text-2xl font-bold text-indigo-700 mb-6">Mes Favoris</h2>
+      <div id="favoritesContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-indigo-700 text-white py-6">
+    <div class="max-w-7xl mx-auto px-4 text-center">
+      <p>© 2025 CodeZone. Tous droits réservés.</p>
+      <div class="mt-4 space-x-4">
+        <a href="#" class="hover:text-indigo-200">À propos</a>
+        <a href="#" class="hover:text-indigo-200">Contact</a>
+        <a href="#" class="hover:text-indigo-200">Mentions légales</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast"></div>
+
+  <script type="module">
+    import { LenderShareAPI } from "https://lendershareapi.pages.dev/LenderShareAPI.js";
+
+    // Données initiales
+    let snippets = [
+      { lang: "html", name: "Formulaire HTML", code: `<form><input type='text' placeholder='Nom'><button>Envoyer</button></form>` },
+      { lang: "css", name: "Animation simple", code: `.box { animation: rotate 2s linear infinite; } @keyframes rotate { 0% {transform:rotate(0deg);} 100% {transform:rotate(360deg);} }` },
+      { lang: "javascript", name: "Fetch API", code: `fetch('/api/data').then(res => res.json()).then(console.log);` },
+      { lang: "react", name: "React Counter", code: `import React, { useState } from 'react';\nexport default function Counter() { const [n, s] = useState(0); return <button onClick={()=>s(n+1)}>Compter {n}</button>; }` },
+      { lang: "python", name: "Lire un fichier", code: `with open('fichier.txt') as f: print(f.read())` },
+      { lang: "sql", name: "Join Users & Orders", code: `SELECT u.name, o.total FROM users u JOIN orders o ON u.id = o.user_id;` },
+      { lang: "html", name: "Carte responsive", code: `<div style='padding:1em;border:1px solid #ccc;'>Contenu utile</div>` },
+      { lang: "javascript", name: "Dark Mode Toggle", code: `document.body.classList.toggle('dark');` },
+      { lang: "css", name: "Responsive Grid", code: `.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }` },
+      { lang: "bash", name: "Créer dossier", code: `mkdir mon_dossier && cd mon_dossier` }
+    ];
+    let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+    let currentUser = JSON.parse(localStorage.getItem('user')) || null;
+    const snippetsPerPage = 6;
+    let currentPage = 1;
+
+    // Utilitaires
+    const showToast = (message) => {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3000);
+    };
+
+    const debounce = (func, wait) => {
+      let timeout;
+      return (...args) => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func(...args), wait);
+      };
+    };
+
+    // Gestion des sections
+    const showSection = (sectionId) => {
+      document.querySelectorAll('section').forEach(section => section.classList.add('hidden'));
+      document.getElementById(sectionId).classList.remove('hidden');
+    };
+
+    // Mise à jour de la navigation
+    const updateNav = () => {
+      document.getElementById('addSnippetLink').classList.toggle('hidden', !currentUser);
+      document.getElementById('favoritesLink').classList.toggle('hidden', !currentUser);
+      document.getElementById('profileLink').classList.toggle('hidden', !currentUser);
+      document.getElementById('logoutBtn').classList.toggle('hidden', !currentUser);
+    };
+
+    // Création d'un élément snippet
+    const createSnippetElement = (snippet, index, container, isFavoriteSection = false) => {
+      const wrapper = document.createElement("div");
+      wrapper.className = "code-block bg-gray-800 rounded-lg shadow-lg overflow-hidden";
+      wrapper.setAttribute("data-name", snippet.name.toLowerCase());
+      wrapper.setAttribute("data-lang", snippet.lang.toLowerCase());
+      wrapper.innerHTML = `
+        <div class="code-header flex justify-between items-center px-4 py-2 bg-gray-900 text-white">
+          <span>${snippet.name}</span>
+          <div class="space-x-2">
+            <button class="preview-button" data-target="editor-${index}" title="Aperçu" aria-label="Aperçu du snippet">
+              <i class="far fa-eye"></i>
+            </button>
+            <button class="share-button" data-index="${index}" title="Partager" aria-label="Partager le snippet">
+              <i class="fas fa-share-alt"></i>
+            </button>
+            <button class="copy-button" data-target="editor-${index}" title="Copier" aria-label="Copier le snippet">
+              <i class="far fa-copy"></i>
+            </button>
+            <button class="download-button" data-target="editor-${index}" data-name="${snippet.name}" title="Télécharger" aria-label="Télécharger le snippet">
+              <i class="fas fa-download"></i>
+            </button>
+            ${currentUser ? `
+              <button class="favorite-button" data-index="${index}" title="${favorites.includes(snippet.name) ? 'Retirer des favoris' : 'Ajouter aux favoris'}" aria-label="${favorites.includes(snippet.name) ? 'Retirer des favoris' : 'Ajouter aux favoris'}">
+                <i class="${favorites.includes(snippet.name) ? 'fas' : 'far'} fa-star"></i>
+              </button>
+            ` : ''}
+          </div>
+        </div>
+        <div id="editor-${index}" class="ace-editor-container h-64 w-full"></div>
+      `;
+      container.appendChild(wrapper);
+
+      const editor = ace.edit(`editor-${index}`);
+      editor.setTheme("ace/theme/monokai");
+      const mode = snippet.lang === 'react' ? 'javascript' : snippet.lang;
+      editor.session.setMode(`ace/mode/${mode}`);
+      editor.setValue(snippet.code, -1);
+      editor.setOptions({
+        enableBasicAutocompletion: true,
+        enableLiveAutocompletion: true,
+        enableSnippets: true,
+        showLineNumbers: true,
+        tabSize: 2,
+        fontSize: "14px"
+      });
+    };
+
+    // Affichage des snippets avec pagination
+    const renderSnippets = (page = 1, filterLang = '', searchQuery = '') => {
+      const container = document.getElementById('snippetsContainer');
+      container.innerHTML = '';
+      let filteredSnippets = snippets.filter(s => 
+        (!filterLang || s.lang === filterLang) &&
+        (!searchQuery || s.name.toLowerCase().includes(searchQuery) || s.lang.toLowerCase().includes(searchQuery))
+      );
+
+      const totalPages = Math.ceil(filteredSnippets.length / snippetsPerPage);
+      currentPage = Math.min(page, totalPages || 1);
+
+      const start = (currentPage - 1) * snippetsPerPage;
+      const end = start + snippetsPerPage;
+      filteredSnippets.slice(start, end).forEach((snippet, i) => {
+        createSnippetElement(snippet, start + i, container);
+      });
+
+      // Pagination
+      const pagination = document.getElementById('pagination');
+      pagination.innerHTML = '';
+      for (let i = 1; i <= totalPages; i++) {
+        const btn = document.createElement('button');
+        btn.textContent = i;
+        btn.className = `px-4 py-2 border rounded-lg ${i === currentPage ? 'bg-indigo-600 text-white' : 'bg-white text-indigo-600'}`;
+        btn.addEventListener('click', () => renderSnippets(i, filterLang, searchQuery));
+        pagination.appendChild(btn);
+      }
+    };
+
+    // Affichage des favoris
+    const renderFavorites = () => {
+      const container = document.getElementById('favoritesContainer');
+      container.innerHTML = '';
+      const favoriteSnippets = snippets.filter(s => favorites.includes(s.name));
+      favoriteSnippets.forEach((snippet, i) => createSnippetElement(snippet, i, container, true));
+    };
+
+    // Gestion des événements
+    document.addEventListener('click', async (e) => {
+      // Copier
+      if (e.target.closest('.copy-button')) {
+        const btn = e.target.closest('.copy-button');
+        const editor = ace.edit(btn.dataset.target);
+        navigator.clipboard.writeText(editor.getValue()).then(() => {
+          btn.innerHTML = '<i class="fas fa-check"></i>';
+          showToast('Code copié !');
+          setTimeout(() => btn.innerHTML = '<i class="far fa-copy"></i>', 1500);
+        });
+      }
+
+      // Aperçu
+      if (e.target.closest('.preview-button')) {
+        const btn = e.target.closest('.preview-button');
+        const editor = ace.edit(btn.dataset.target);
+        const code = editor.getValue();
+        const win = window.open('', '_blank');
+        win.document.write(code);
+        win.document.close();
+        showToast('Aperçu ouvert !');
+      }
+
+      // Partage
+      if (e.target.closest('.share-button')) {
+        const btn = e.target.closest('.share-button');
+        const index = btn.dataset.index;
+        const editor = ace.edit(`editor-${index}`);
+        const code = editor.getValue();
+        const title = document.querySelector(`#editor-${index}`).parentElement.querySelector('span').textContent;
+        const shareURL = `https://codezone.dev/snippet/${encodeURIComponent(title)}`;
+
+        try {
+          await LenderShareAPI.share({
+            title,
+            text: `Partage de snippet : ${title}`,
+            url: shareURL
+          });
+          await navigator.clipboard.writeText(shareURL);
+          showToast('Lien de partage copié !');
+        } catch (err) {
+          console.error('Erreur API :', err);
+          showToast('Erreur lors du partage');
+        }
+      }
+
+      // Télécharger
+      if (e.target.closest('.download-button')) {
+        const btn = e.target.closest('.download-button');
+        const editor = ace.edit(btn.dataset.target);
+        const code = editor.getValue();
+        const name = btn.dataset.name;
+        const blob = new Blob([code], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${name}.txt`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('Snippet téléchargé !');
+      }
+
+      // Favoris
+      if (e.target.closest('.favorite-button')) {
+        const btn = e.target.closest('.favorite-button');
+        const index = btn.dataset.index;
+        const snippetName = document.querySelector(`#editor-${index}`).parentElement.querySelector('span').textContent;
+        if (favorites.includes(snippetName)) {
+          favorites = favorites.filter(f => f !== snippetName);
+          btn.innerHTML = '<i class="far fa-star"></i>';
+          btn.title = 'Ajouter aux favoris';
+          showToast('Retiré des favoris');
+        } else {
+          favorites.push(snippetName);
+          btn.innerHTML = '<i class="fas fa-star"></i>';
+          btn.title = 'Retirer des favoris';
+          showToast('Ajouté aux favoris');
+        }
+        localStorage.setItem('favorites', JSON.stringify(favorites));
+        if (document.getElementById('favorites').classList.contains('hidden')) return;
+        renderFavorites();
+      }
+    });
+
+    // Recherche avec debounce
+    document.getElementById('searchInput').addEventListener('input', debounce(() => {
+      const query = document.getElementById('searchInput').value.toLowerCase();
+      const lang = document.getElementById('langFilter').value;
+      renderSnippets(1, lang, query);
+    }, 300));
+
+    // Filtrage par langage
+    document.getElementById('langFilter').addEventListener('change', () => {
+      const lang = document.getElementById('langFilter').value;
+      const query = document.getElementById('searchInput').value.toLowerCase();
+      renderSnippets(1, lang, query);
+    });
+
+    // Ajout de snippet
+    document.getElementById('addSnippetForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = document.getElementById('snippetName').value;
+      const lang = document.getElementById('snippetLang').value;
+      const code = document.getElementById('snippetCode').value;
+
+      snippets.push({ lang, name, code });
+      localStorage.setItem('snippets', JSON.stringify(snippets)); // Persistance
+      renderSnippets(currentPage);
+      showToast('Snippet ajouté !');
+      e.target.reset();
+      showSection('snippets');
+    });
+
+    // Navigation
+    document.querySelectorAll('nav a').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const sectionId = link.getAttribute('href').substring(1);
+        showSection(sectionId);
+        if (sectionId === 'favorites') renderFavorites();
+      });
+    });
+
+    // Déconnexion
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      currentUser = null;
+      localStorage.removeItem('user');
+      updateNav();
+      showSection('home');
+      showToast('Déconnexion réussie');
+    });
+
+    // Mode sombre
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      document.body.classList.toggle('dark-mode');
+      const isDark = document.body.classList.contains('dark-mode');
+      document.getElementById('themeToggle').innerHTML = `<i class="fas fa-${isDark ? 'sun' : 'moon'}"></i>`;
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    });
+
+    // Initialisation
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+      document.body.classList.add('dark-mode');
+      document.getElementById('themeToggle').innerHTML = '<i class="fas fa-sun"></i>';
+    }
+    updateNav();
+    renderSnippets();
+  </script>
+</body>
+</html>
