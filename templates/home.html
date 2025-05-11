@@ -1,70 +1,78 @@
-{% load static %}
 <!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CodeZone Chat</title>
-  <link rel="icon" type="image/png" href="{% static 'Icone/file_00000000e6dc61f892653be5b6256447_conversation_id=6820d600-fb80-8010-bcad-e76a3e1dab1b&message_id=123703f2-52e9-4850-9d3d-64bcf00a2dd4.png' %}">
+  <title>Groupes Django Chat</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     @keyframes float {
-      0% { transform: translateY(0); }
+      0% { transform: translateY(0px); }
       50% { transform: translateY(-10px); }
-      100% { transform: translateY(0); }
+      100% { transform: translateY(0px); }
     }
-    .animate-float { animation: float 4s ease-in-out infinite; }
-    .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-    .group-item:hover { transform: translateX(5px); }
-    .group-item { transition: all 0.3s ease; }
-    .input-focus:focus { box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3); }
+    .animate-float {
+      animation: float 4s ease-in-out infinite;
+    }
+    .gradient-bg {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .group-item:hover {
+      transform: translateX(5px);
+    }
+    .group-item {
+      transition: all 0.3s ease;
+    }
+    .input-focus:focus {
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+    }
   </style>
 </head>
 <body class="font-['Poppins'] min-h-screen gradient-bg flex flex-col items-center justify-center p-4">
-
-  <!-- décor animé -->
   <div class="absolute top-0 left-0 w-full h-full opacity-5">
     <div class="absolute top-20 left-10 w-32 h-32 rounded-full bg-purple-300 animate-float"></div>
     <div class="absolute top-1/3 right-20 w-24 h-24 rounded-full bg-blue-300 animate-float" style="animation-delay: 0.5s;"></div>
     <div class="absolute bottom-20 left-1/3 w-28 h-28 rounded-full bg-indigo-300 animate-float" style="animation-delay: 1s;"></div>
   </div>
 
-  <!-- Formulaire création de groupe (masqué par défaut) -->
-  <div class="relative z-10 w-full max-w-md mb-8 hidden" id="create-group-form">
-    <div class="bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300">
+  <div class="relative z-10 w-full max-w-md mb-8">
+    <div class="bg-white rounded-2xl shadow-xl overflow-hidden transition-all duration-300 hover:shadow-2xl">
       <div class="p-8">
-        <div class="flex justify-end">
-          <button id="close-form" class="text-gray-400 hover:text-gray-700 text-xl">&times;</button>
-        </div>
         <div class="flex justify-center mb-6">
           <div class="bg-gradient-to-r from-indigo-500 to-purple-600 p-3 rounded-full shadow-lg">
             <i class="fas fa-comments text-white text-2xl"></i>
           </div>
         </div>
-        <h2 class="text-3xl font-bold text-center text-gray-800 mb-2">Créer un Groupe</h2>
-        <p class="text-center text-gray-500 mb-6">Bienvenue {{ request.user.username }}</p>
-
-        <form method="POST" action="{% url 'checkview' %}" class="space-y-4">
+        <h2 class="text-3xl font-bold text-center text-gray-800 mb-2">Créer ou Rejoindre un Groupe</h2>
+        <p class="text-center text-gray-500 mb-6">Connectez-vous pour commencer à discuter</p>
+        
+        <form id="post-form" method="POST" action="checkview" class="space-y-4">
           {% csrf_token %}
           <div>
             <label for="room_name" class="block text-sm font-medium text-gray-700 mb-1">Nom du groupe</label>
-            <input type="text" name="room_name" id="room_name"
+            <input type="text" name="room_name" id="room_name" 
                    class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-indigo-500 input-focus transition duration-300"
                    placeholder="Entrez un nom de groupe" required>
           </div>
-
-          <button type="submit"
+          
+          <div>
+            <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Nom d'utilisateur</label>
+            <input type="text" name="username" id="username" 
+                   class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-indigo-500 input-focus transition duration-300"
+                   placeholder="Votre pseudo" required>
+          </div>
+          
+          <button type="submit" 
                   class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3 px-4 rounded-lg font-semibold shadow-md hover:shadow-lg transition duration-300 flex items-center justify-center">
-            <i class="fas fa-plus-circle mr-2"></i> Créer / Rejoindre
+            <i class="fas fa-sign-in-alt mr-2"></i> Entrer dans le groupe
           </button>
         </form>
       </div>
     </div>
   </div>
 
-  <!-- Liste des groupes -->
   <div class="relative z-10 w-full max-w-md">
     <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
       <div class="p-6">
@@ -76,19 +84,14 @@
             {{ rooms|length }} disponibles
           </span>
         </div>
-
-        <div class="mb-3">
-          <input type="text" id="search-room" placeholder="Rechercher un groupe..."
-                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300">
-        </div>
-
+        
         <div class="space-y-3">
           {% for room in rooms %}
             <div class="group-item bg-gray-50 hover:bg-indigo-50 p-4 rounded-lg border border-gray-100 hover:border-indigo-100 flex items-center">
               <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center mr-3">
                 <i class="fas fa-hashtag text-sm"></i>
               </div>
-              <a href="/{{ room.name }}/" class="font-medium text-gray-700 hover:text-indigo-600 flex-grow">
+              <a href="/room/{{ room.name }}/" class="font-medium text-gray-700 hover:text-indigo-600 flex-grow">
                 {{ room.name }}
               </a>
               <i class="fas fa-chevron-right text-gray-400 group-hover:text-indigo-500"></i>
@@ -96,7 +99,8 @@
           {% empty %}
             <div class="text-center py-6">
               <i class="fas fa-comment-slash text-4xl text-gray-300 mb-3"></i>
-              <p class="text-gray-500">Aucun groupe pour l’instant.</p>
+              <p class="text-gray-500">Aucun groupe disponible pour le moment.</p>
+              <p class="text-sm text-gray-400 mt-1">Créez le premier groupe !</p>
             </div>
           {% endfor %}
         </div>
@@ -105,41 +109,7 @@
   </div>
 
   <div class="mt-8 text-center text-white text-opacity-70 text-sm">
-    <p>© 2025 CodeZone Chat. Tous droits réservés.</p>
+    <p>© 2023 Django Chat. Tous droits réservés.</p>
   </div>
-
-  <!-- Bouton flottant pour ouvrir le formulaire -->
-  <button id="open-form"
-          class="fixed bottom-6 right-6 bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-lg text-xl">
-    <i class="fas fa-plus"></i>
-  </button>
-
-  <!-- JS de recherche -->
-  <script>
-    const searchInput = document.getElementById('search-room');
-    searchInput.addEventListener('input', function () {
-      const filter = this.value.toLowerCase();
-      document.querySelectorAll('.group-item').forEach(item => {
-        const name = item.innerText.toLowerCase();
-        item.style.display = name.includes(filter) ? '' : 'none';
-      });
-    });
-
-    // JS pour ouvrir/fermer le formulaire
-    const openBtn = document.getElementById('open-form');
-    const closeBtn = document.getElementById('close-form');
-    const formContainer = document.getElementById('create-group-form');
-
-    openBtn.addEventListener('click', () => {
-      formContainer.classList.remove('hidden');
-      openBtn.classList.add('hidden');
-    });
-
-    closeBtn.addEventListener('click', () => {
-      formContainer.classList.add('hidden');
-      openBtn.classList.remove('hidden');
-    });
-  </script>
-
 </body>
 </html>
