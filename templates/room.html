@@ -1,530 +1,656 @@
+ {% load static %}
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chat Application</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeZone message</title>
     
-    :root {
-      --primary: #6366f1;
-      --primary-dark: #4f46e5;
-      --secondary: #f43f5e;
-      --dark: #1e293b;
-      --light: #f8fafc;
-    }
+    <!-- Font Awesome 6 Free -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-...HASH..." crossorigin="anonymous" referrerpolicy="no-referrer" />
     
-    body {
-      font-family: 'Poppins', sans-serif;
-      background-color: #f1f5f9;
-    }
-    
-    /* Animation pour les nouveaux messages */
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    
-    .message-animation {
-      animation: fadeIn 0.3s ease-out forwards;
-    }
-    
-    /* Barre de défilement personnalisée */
-    ::-webkit-scrollbar {
-      width: 6px;
-    }
-    
-    ::-webkit-scrollbar-track {
-      background: #f1f1f1;
-      border-radius: 10px;
-    }
-    
-    ::-webkit-scrollbar-thumb {
-      background: #c1c1c1;
-      border-radius: 10px;
-    }
-    
-    ::-webkit-scrollbar-thumb:hover {
-      background: #a8a8a8;
-    }
-    
-    /* Style pour les fichiers */
-    .file-card {
-      transition: all 0.2s ease;
-    }
-    
-    .file-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-    
-    /* Style pour l'upload */
-    .upload-dropzone {
-      border: 2px dashed #cbd5e1;
-      transition: all 0.2s ease;
-    }
-    
-    .upload-dropzone.active {
-      border-color: var(--primary);
-      background-color: rgba(99, 102, 241, 0.05);
-    }
-    
-    /* Style pour les emojis */
-    .emoji-picker {
-      transition: all 0.3s ease;
-      transform-origin: bottom right;
-    }
-    
-    .emoji-picker.hidden {
-      opacity: 0;
-      transform: scale(0.8);
-      pointer-events: none;
-    }
-  </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #e5ddd5;
+        }
+
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: 100%;
+            max-width: 800px;
+            margin: auto;
+            border: 1px solid #ccc;
+            background: #ffffff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .chat-header {
+            background: #075e54;
+            color: white;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #ccc;
+        }
+
+        .chat-header h1 {
+            font-size: 18px;
+            margin: 0;
+            flex: 1;
+        }
+
+        .chat-header button {
+            background: transparent;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .chat-box {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            background: #e5ddd5;
+        }
+
+        .input-area {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-top: 1px solid #ccc;
+            background: #ffffff;
+        }
+
+        .input-area input[type="text"] {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+
+        .input-area .file-icon, .input-area .send-icon, .input-area .record-icon {
+            background: #075e54;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            padding: 10px;
+            cursor: pointer;
+            margin-left: 5px;
+            font-size: 16px;
+        }
+
+        .input-area .file-icon:hover, .input-area .send-icon:hover, .input-area .record-icon:hover {
+            background: #054b43;
+        }
+
+        .preview-area {
+            padding: 10px;
+            border-top: 1px solid #ccc;
+            background: #e5ddd5;
+        }
+
+        .preview-area img, .preview-area video, .preview-area audio {
+            max-width: 50%;
+            margin-top: 5px;
+        }
+
+      
+.message img, .message video, .message audio{
+    width: 250px;
+    max-height: 3body {
+            
+    }00px;
+}
+      .message {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding: 10px;
+    border-radius: 12px;
+    background-color: #f1f1f1;
+    max-width: 80%;
+    word-wrap: break-word;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* avatar rond avec taille uniforme */
+.message .avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* zone de contenu du message */
+.message-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: white;
+    border-radius: 8px;
+    padding: 8px 12px;
+    box-shadow: inset 0 0 0 1px #ddd;
+}
+
+/* contenu du texte */
+.message-content p {
+    margin: 0 0 5px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+}
+
+/* heure du message */
+.message-time {
+    font-size: 0.75rem;
+    color: #888;
+    text-align: right;
+    margin-top: 4px;
+}
+
+/* mise en forme des liens */
+.message-content a {
+    color: #007bff;
+    text-decoration: underline;
+    word-break: break-all;
+}
+
+/* code inline */
+.message-content code {
+    background-color: #eee;
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.95em;
+}
+
+/* blocs de code */
+.message-content pre {
+    background-color: #272822;
+    color: #f8f8f2;
+    padding: 10px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-size: 0.9em;
+    margin: 5px 0;
+}
+        .audio-lobby {
+            padding: 10px;
+            border-top: 1px solid #ccc;
+            background: #ffffff;
+        }
+
+        .audio-lobby h2 {
+            margin-top: 0;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            padding-top: 60px;
+        }
+
+        .modal-content {
+            background-color: #ffffff;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            width: 80%;
+            border-radius: 8px;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .file-preview {
+            margin-top: 5px;
+        }
+   @keyframes flash {
+    0% { background-color: #e0ffe0; }
+    100% { background-color: transparent; }
+}
+
+.flash {
+    animation: flash 1s ease;
+}
+
+.preview-container {
+    position: relative;
+    margin-bottom: 10px;
+    padding: 5px;
+    border-radius: 10px;
+    background: #e1f3fb;
+    display: inline-block;
+}
+
+.download-icon {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    background: white;
+    border: none;
+    border-radius: 50%;
+    padding: 5px;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+audio, video {
+    border-radius: 10px;
+    background: #f0f0f0;
+}
+
+.chat-image {
+    max-width: 200px;
+    border-radius: 8px;
+    margin-top: 5px;
+}
+
+.chat-video {
+    width: 100%;
+    max-width: 300px;
+    border-radius: 8px;
+    margin-top: 5px;
+}
+
+.file-message {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.download-icon i {
+    font-size: 20px;
+    color: #007bff;
+    cursor: pointer;
+}
+
+.loading-spinner {
+    width: 10px;
+    height: 10px;
+    border: 2px solid #ccc;
+    border-top: 2px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.audio-message audio {
+    width: 100%;
+    max-width: 250px;
+}
+
+    </style>
 </head>
-<body class="min-h-screen flex flex-col items-center py-8 px-4">
-  <!-- En-tête -->
-  <div class="w-full max-w-4xl mb-6 flex justify-between items-center">
-    <div class="flex items-center">
-      <div class="relative">
-        <div class="w-12 h-12 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 flex items-center justify-center text-white">
-          <i class="fas fa-comments text-xl"></i>
-        </div>
-        <span class="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white"></span>
-      </div>
-      <div class="ml-4">
-        <h1 class="text-2xl font-bold text-gray-800">{{room}}</h1>
-        <p class="text-sm text-gray-500 flex items-center">
-          <span class="w-2 h-2 bg-green-500 rounded-full mr-1"></span>
-          <span id="online-count">3 en ligne</span>
-        </p>
-      </div>
+<body>
+    <div class="chat-container">
+    <div class="chat-header">
+        <h1>{{ room_details.name }}</h1>
+        <button id="group-settings">⚙️</button>
     </div>
-    <div class="flex space-x-3">
-      <button class="p-2 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">
-        <i class="fas fa-search"></i>
-      </button>
-      <button class="p-2 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">
-        <i class="fas fa-ellipsis-v"></i>
-      </button>
-      <a href="{% url 'home' %}" class="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-lg shadow hover:shadow-md transition-all duration-300 flex items-center">
-        <i class="fas fa-exchange-alt mr-2"></i>
-        Changer
-      </a>
-    </div>
-  </div>
 
-  <!-- Zone de messages -->
-  <div id="display" class="w-full max-w-4xl h-[500px] bg-white rounded-xl shadow-lg overflow-hidden flex flex-col">
-    <div class="p-4 bg-gradient-to-r from-indigo-500 to-purple-500 text-white flex justify-between items-center">
-      <h2 class="font-medium flex items-center">
-        <i class="fas fa-comment-dots mr-2"></i>
-        <span>Messages</span>
-        <span class="ml-2 text-xs bg-white bg-opacity-20 px-2 py-1 rounded-full">Groupe public</span>
-      </h2>
-      <div class="flex items-center space-x-2">
-        <button id="scroll-to-bottom" class="p-1 rounded-full bg-white bg-opacity-20 hover:bg-opacity-30 transition-colors">
-          <i class="fas fa-arrow-down text-xs"></i>
-        </button>
-        <button class="p-1 rounded-full bg-white bg-opacity-20 hover:bg-opacity-30 transition-colors">
-          <i class="fas fa-cog text-xs"></i>
-        </button>
-      </div>
+    <div class="chat-box" id="chat-box">
+        <!-- Messages ici -->
     </div>
-    
-    <div id="messages-container" class="flex-1 overflow-y-auto p-4 space-y-4">
-      <div class="text-center text-gray-500 py-10">
-        <i class="fas fa-comment-slash text-3xl mb-2"></i>
-        <p>Aucun message présent</p>
-        <p class="text-sm mt-2">Commencez la conversation !</p>
-      </div>
+
+    <div class="input-area">
+        <label for="file-input" class="file-icon">📎</label>
+        <input type="file" id="file-input" style="display:none;">
+        <input type="text" id="message-input" placeholder="Tapez un message...">
+        <button id="send-button" class="send-icon">➤</button>
+        <button id="record-button" class="record-icon">🎤</button>
     </div>
-  </div>
 
-  <!-- Zone de saisie -->
-  <div class="w-full max-w-4xl mt-6">
-    <form id="post-form" class="bg-white rounded-xl shadow-lg overflow-hidden">
-      {% csrf_token %}
-      <input type="hidden" name="username" id="username" value="{{username}}"/>
-      <input type="hidden" name="room_id" id="room_id" value="{{room_details.id}}"/>
-      
-      <!-- Zone d'upload (masquée par défaut) -->
-      <div id="upload-container" class="upload-dropzone hidden p-4 rounded-t-lg">
-        <div class="text-center">
-          <i class="fas fa-cloud-upload-alt text-4xl text-indigo-500 mb-2"></i>
-          <p class="font-medium">Glissez-déposez vos fichiers ici</p>
-          <p class="text-sm text-gray-500 mt-1">ou cliquez pour sélectionner</p>
-          <input type="file" id="file-upload" class="hidden" multiple>
-          <button type="button" id="browse-files" class="mt-3 px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors">
-            Parcourir les fichiers
-          </button>
-        </div>
-        <div id="file-preview" class="mt-4 grid grid-cols-2 gap-3 hidden">
-          <!-- Prévisualisation des fichiers -->
-        </div>
-      </div>
-      
-      <!-- Zone de texte principale -->
-      <div class="p-4">
-        <div class="relative">
-          <div id="emoji-picker" class="emoji-picker hidden absolute bottom-12 right-0 w-64 h-72 bg-white rounded-lg shadow-xl z-10 border border-gray-200 overflow-hidden">
-            <div class="h-full overflow-y-auto p-2">
-              <!-- Les emojis seraient chargés ici via JavaScript -->
-              <div class="text-center py-10 text-gray-400">
-                <i class="fas fa-smile text-2xl mb-2"></i>
-                <p>Sélectionnez un emoji</p>
-              </div>
-            </div>
-          </div>
-          
-          <textarea name="message" id="message" rows="1"
-                 class="w-full pl-4 pr-12 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 resize-none"
-                 placeholder="Écrivez votre message ici..." 
-                 autocomplete="off"></textarea>
-          
-          <div class="absolute right-2 top-1/2 transform -translate-y-1/2 flex space-x-1">
-            <button type="button" id="emoji-btn" class="text-gray-500 hover:text-indigo-500 transition-colors duration-200 p-1">
-              <i class="far fa-smile"></i>
-            </button>
-            <button type="button" id="upload-btn" class="text-gray-500 hover:text-indigo-500 transition-colors duration-200 p-1">
-              <i class="fas fa-paperclip"></i>
-            </button>
-            <button type="submit" class="text-indigo-500 hover:text-indigo-700 p-1">
-              <i class="fas fa-paper-plane"></i>
-            </button>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Barre d'outils inférieure -->
-      <div class="px-4 py-3 bg-gray-50 flex justify-between items-center border-t border-gray-200">
-        <div class="flex space-x-2">
-          <button type="button" class="text-gray-500 hover:text-indigo-500 transition-colors duration-200 p-1">
-            <i class="fas fa-microphone"></i>
-          </button>
-          <button type="button" class="text-gray-500 hover:text-indigo-500 transition-colors duration-200 p-1">
-            <i class="fas fa-image"></i>
-          </button>
-          <button type="button" class="text-gray-500 hover:text-indigo-500 transition-colors duration-200 p-1">
-            <i class="fas fa-video"></i>
-          </button>
-        </div>
-        <span class="text-xs text-gray-400">
-          <span id="char-count">0/500</span> • Appuyez sur <kbd class="px-1 py-0.5 bg-gray-200 rounded">Shift+Entrée</kbd> pour aller à la ligne
-        </span>
-      </div>
-    </form>
-  </div>
+    <div id="preview-area" class="preview-area"></div>
+    <audio id="notificationSound" src="{% static 'sounds/notification.mp3' %}" preload="auto"></audio>
+</div>
+<script>
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+const csrftoken = getCookie('csrftoken');
+</script>
 
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script>
-    $(document).ready(function(){
-      const display = $("#messages-container");
-      const messageInput = $("#message");
-      const charCount = $("#char-count");
-      const uploadContainer = $("#upload-container");
-      const fileUpload = $("#file-upload");
-      const filePreview = $("#file-preview");
-      const browseFiles = $("#browse-files");
-      const uploadBtn = $("#upload-btn");
-      const emojiBtn = $("#emoji-btn");
-      const emojiPicker = $("#emoji-picker");
-      const scrollToBottomBtn = $("#scroll-to-bottom");
-      
-      let isUploading = false;
-      
-      // Fonction pour vérifier si on est en bas de la zone de chat
-      const isAtBottom = () => {
-        const container = display[0];
-        return container.scrollTop + container.clientHeight >= container.scrollHeight - 20;
-      };
-      
-      // Fonction pour formater la date
-      const formatDate = (dateString) => {
-        const date = new Date(dateString);
-        const now = new Date();
-        
-        const isToday = date.getDate() === now.getDate() && 
-                        date.getMonth() === now.getMonth() && 
-                        date.getFullYear() === now.getFullYear();
-        
-        const options = {
-          hour: '2-digit',
-          minute: '2-digit',
-          ...(!isToday && { 
-            day: 'numeric', 
-            month: 'short',
-            year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
-          })
-        };
-        
-        return date.toLocaleString('fr-FR', options);
-      };
-      
-      // Fonction pour afficher un message
-      const displayMessage = (message) => {
-        const isCurrentUser = message.user === $('#username').val();
-        const formattedDate = formatDate(message.date);
-        
-        // Vérifier si c'est un fichier
-        const isFile = message.file_url !== undefined;
-        
-        let contentHtml = '';
-        
-        if (isFile) {
-          // Déterminer le type de fichier
-          const fileExt = message.file_url.split('.').pop().toLowerCase();
-          let fileIcon = 'fa-file';
-          let previewHtml = '';
-          
-          if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExt)) {
-            fileIcon = 'fa-image';
-            previewHtml = `<img src="${message.file_url}" alt="Image" class="w-full h-32 object-cover rounded-lg mb-2">`;
-          } else if (['mp4', 'mov', 'avi', 'webm'].includes(fileExt)) {
-            fileIcon = 'fa-video';
-            previewHtml = `
-              <div class="relative w-full h-32 bg-gray-200 rounded-lg mb-2 flex items-center justify-center">
-                <i class="fas fa-video text-2xl text-gray-500"></i>
-                <div class="absolute bottom-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
-                  ${message.file_size || ''}
-                </div>
-              </div>
-            `;
-          } else if (['mp3', 'wav', 'ogg'].includes(fileExt)) {
-            fileIcon = 'fa-music';
-            previewHtml = `
-              <div class="w-full h-32 bg-gray-200 rounded-lg mb-2 flex items-center justify-center">
-                <i class="fas fa-music text-2xl text-gray-500"></i>
-              </div>
-            `;
-          } else if (['pdf'].includes(fileExt)) {
-            fileIcon = 'fa-file-pdf';
-          } else if (['doc', 'docx'].includes(fileExt)) {
-            fileIcon = 'fa-file-word';
-          } else if (['xls', 'xlsx'].includes(fileExt)) {
-            fileIcon = 'fa-file-excel';
-          } else if (['ppt', 'pptx'].includes(fileExt)) {
-            fileIcon = 'fa-file-powerpoint';
-          } else if (['zip', 'rar', '7z'].includes(fileExt)) {
-            fileIcon = 'fa-file-archive';
-          }
-          
-          contentHtml = `
-            <div class="file-card bg-white border border-gray-200 rounded-lg overflow-hidden">
-              ${previewHtml}
-              <div class="p-3">
-                <div class="flex items-center">
-                  <i class="fas ${fileIcon} text-indigo-500 mr-2"></i>
-                  <div class="truncate flex-1">
-                    <p class="text-sm font-medium truncate">${message.file_name || 'Fichier'}</p>
-                    <p class="text-xs text-gray-500">${message.file_size || ''} • ${fileExt.toUpperCase()}</p>
-                  </div>
-                </div>
-                <a href="${message.file_url}" download class="mt-2 w-full block text-center py-1 bg-indigo-50 text-indigo-600 text-sm rounded hover:bg-indigo-100 transition-colors">
-                  <i class="fas fa-download mr-1"></i> Télécharger
-                </a>
-              </div>
-            </div>
-          `;
-        } else {
-          contentHtml = `<p class="mt-1 text-sm ${isCurrentUser ? '' : 'text-gray-700'}">${message.value}</p>`;
-        }
-        
-        const messageHtml = `
-          <div class="message-animation flex ${isCurrentUser ? 'justify-end' : 'justify-start'}">
-            <div class="max-w-xs md:max-w-md lg:max-w-lg ${isFile ? 'w-full' : ''}">
-              ${!isCurrentUser && !isFile ? `
-                <span class="font-semibold text-sm text-gray-700">${message.user}</span>
-              ` : ''}
-              <div class="rounded-lg p-3 mt-1 ${isCurrentUser ? 
-                'bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-br-none' : 
-                'bg-gray-100 text-gray-800 rounded-bl-none'}">
-                ${contentHtml}
-                <div class="flex items-center justify-end mt-2 space-x-2">
-                  <span class="text-xs ${isCurrentUser ? 'text-indigo-100' : 'text-gray-500'}">
-                    ${formattedDate}
-                  </span>
-                  ${isCurrentUser ? `
-                    <span class="text-xs ${isCurrentUser ? 'text-indigo-100' : 'text-gray-500'}">
-                      <i class="fas fa-check ${message.read ? 'text-blue-300' : ''}"></i>
-                    </span>
-                  ` : ''}
-                </div>
-              </div>
-            </div>
-          </div>
-        `;
-        
-        return messageHtml;
-      };
-      
-      // Auto-refresh des messages
-      const refreshMessages = function(){
-        $.ajax({
-          type: 'GET',
-          url: "/getMessages/{{room}}/",
-          success: function(response){
-            const wasAtBottom = isAtBottom();
-            
-            display.empty();
-            
-            if (response.messages.length === 0) {
-              display.html(`
-                <div class="text-center text-gray-500 py-10">
-                  <i class="fas fa-comment-slash text-3xl mb-2"></i>
-                  <p>Aucun message présent</p>
-                </div>
-              `);
-              return;
-            }
-            
-            for (const message of response.messages) {
-              display.append(displayMessage(message));
-            }
-            
-            if (wasAtBottom) {
-              display.scrollTop(display[0].scrollHeight);
-            }
-          },
-          error: function(){
-            console.error('Erreur de récupération des messages');
-          }
-        });
-      };
-      
-      setInterval(refreshMessages, 1000);
-      
-      // Envoi des messages
-      $(document).on('submit','#post-form',function(e){
-        e.preventDefault();
-        const message = messageInput.val().trim();
-        
-        if (message === '' && !isUploading) return;
-        
-        $.ajax({
-          type: 'POST',
-          url: '/send',
-          data: {
-            username: $('#username').val(),
-            room_id: $('#room_id').val(),
-            message: message,
-            csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val(),
-          },
-          success: function(data){
-            messageInput.val('');
-            charCount.text('0/500');
-            refreshMessages();
-          }
-        });
-      });
-      
-      // Gestion de la zone de texte
-      messageInput.on('input', function() {
-        const text = $(this).val();
-        const count = text.length;
-        charCount.text(`${count}/500`);
-        
-        // Ajuster la hauteur automatiquement
-        this.style.height = 'auto';
-        this.style.height = (this.scrollHeight) + 'px';
-      });
-      
-      // Envoyer avec la touche Entrée (Shift+Entrée pour aller à la ligne)
-      messageInput.keydown(function(e){
-        if(e.which === 13 && !e.shiftKey) {
-          e.preventDefault();
-          $('#post-form').submit();
-        }
-      });
-      
-      // Bouton pour aller en bas
-      scrollToBottomBtn.click(function() {
-        display.scrollTop(display[0].scrollHeight);
-      });
-      
-      // Afficher/masquer le sélecteur d'emoji
-      emojiBtn.click(function(e) {
-        e.stopPropagation();
-        emojiPicker.toggleClass('hidden');
-      });
-      
-      // Masquer le sélecteur d'emoji quand on clique ailleurs
-      $(document).click(function() {
-        emojiPicker.addClass('hidden');
-      });
-      
-      // Gestion de l'upload de fichiers
-      uploadBtn.click(function() {
-        uploadContainer.toggleClass('hidden');
-        filePreview.addClass('hidden');
-      });
-      
-      browseFiles.click(function() {
-        fileUpload.click();
-      });
-      
-      fileUpload.change(function(e) {
-        const files = e.target.files;
-        if (files.length > 0) {
-          filePreview.empty();
-          
-          for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-            const fileExt = file.name.split('.').pop().toLowerCase();
-            let fileIcon = 'fa-file';
-            
-            if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExt)) {
-              fileIcon = 'fa-image';
-              const reader = new FileReader();
-              reader.onload = function(e) {
-                $(`#preview-${i}`).html(`<img src="${e.target.result}" class="w-full h-32 object-cover rounded-lg">`);
-              };
-              reader.readAsDataURL(file);
-            }
-            
-            filePreview.append(`
-              <div id="preview-${i}" class="file-card bg-white border border-gray-200 rounded-lg overflow-hidden">
-                <div class="w-full h-32 bg-gray-100 rounded-lg flex items-center justify-center">
-                  <i class="fas ${fileIcon} text-2xl text-gray-400"></i>
-                </div>
-                <div class="p-2">
-                  <p class="text-sm font-medium truncate">${file.name}</p>
-                  <p class="text-xs text-gray-500">${(file.size / 1024).toFixed(1)} KB</p>
-                </div>
-              </div>
-            `);
-          }
-          
-          filePreview.removeClass('hidden');
-          isUploading = true;
-        }
-      });
-      
-      // Drag and drop pour les fichiers
-      uploadContainer.on('dragover', function(e) {
-        e.preventDefault();
-        $(this).addClass('active');
-      });
-      
-      uploadContainer.on('dragleave', function(e) {
-        e.preventDefault();
-        $(this).removeClass('active');
-      });
-      
-      uploadContainer.on('drop', function(e) {
-        e.preventDefault();
-        $(this).removeClass('active');
-        
-        const files = e.originalEvent.dataTransfer.files;
-        if (files.length > 0) {
-          fileUpload[0].files = files;
-          fileUpload.trigger('change');
-        }
-      });
+<script>
+const chatBox = document.getElementById('chat-box');
+const messageInput = document.getElementById('message-input');
+const sendButton = document.getElementById('send-button');
+const fileInput = document.getElementById('file-input');
+const recordButton = document.getElementById('record-button');
+const previewArea = document.getElementById('preview-area');
+const notificationSound = document.getElementById('notification-sound');
+
+const roomName = "{{ room }}";
+const roomId = "{{ room_details.id }}";
+const username = "{{ request.user.username }}";
+
+let mediaRecorder;
+let chunks = [];
+
+document.addEventListener('DOMContentLoaded', () => {
+    if ("Notification" in window && Notification.permission !== "granted") {
+        Notification.requestPermission();
+    }
+
+    sendButton.addEventListener('click', sendMessage);
+    messageInput.addEventListener('keypress', e => {
+        if (e.key === 'Enter') sendMessage();
     });
-  </script>
+
+    fileInput.addEventListener('change', () => {
+        previewArea.innerHTML = '';
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        const url = URL.createObjectURL(file);
+        const div = document.createElement('div');
+        div.classList.add('preview-container');
+
+        const downloadIcon = document.createElement('button');
+        downloadIcon.innerHTML = '⬇️';
+        downloadIcon.classList.add('download-icon');
+        downloadIcon.addEventListener('click', async () => {
+            downloadIcon.textContent = '⏳';
+            await downloadFile(url, file.name);
+            downloadIcon.textContent = '⬇️';
+        });
+
+        if (file.type.startsWith('image/')) {
+            div.innerHTML = `<img src="${url}" style="max-width:200px;">`;
+        } else if (file.type.startsWith('video/')) {
+            div.innerHTML = `
+                <video src="${url}" style="max-width:200px;" controls controlsList="nodownload"></video>
+            `;
+        } else if (file.type.startsWith('audio/')) {
+            div.innerHTML = `
+                <audio src="${url}" controls controlsList="nodownload" style="width:200px;"></audio>
+            `;
+        } else {
+            div.innerHTML = `<span>${file.name}</span>`;
+        }
+
+        div.appendChild(downloadIcon);
+        previewArea.appendChild(div);
+    });
+
+    recordButton.addEventListener('click', () => {
+        if (!mediaRecorder || mediaRecorder.state === 'inactive') {
+            navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+                mediaRecorder = new MediaRecorder(stream);
+                mediaRecorder.start();
+                recordButton.textContent = '◼️';
+
+                mediaRecorder.ondataavailable = e => chunks.push(e.data);
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(chunks, { type: 'audio/webm' });
+                    chunks = [];
+                    const file = new File([blob], `voice_${Date.now()}.webm`, { type: 'audio/webm' });
+                    sendVoice(file);
+                    recordButton.textContent = '🎤';
+                };
+            });
+        } else if (mediaRecorder.state === 'recording') {
+            mediaRecorder.stop();
+        }
+    });
+
+    fetchMessages();
+    setInterval(fetchMessages, 3000);
+});
+
+async function downloadFile(url, filename) {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+}
+
+
+function sendMessage() {
+    const message = messageInput.value.trim();
+    const file = fileInput.files[0];
+    if (!message && !file) return;
+
+    const formData = new FormData();
+formData.append('room_id', roomId);
+formData.append('message', message);
+if (file) formData.append('file', file);
+
+    fetch('/send/', {
+    method: 'POST',
+    headers: {
+        'X-CSRFToken': csrftoken
+    },
+    body: formData
+})
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'Message envoyé') {
+            messageInput.value = '';
+            fileInput.value = '';
+            previewArea.innerHTML = '';
+            fetchMessages();
+        }
+    })
+    .catch(err => {
+        console.error('Erreur envoi :', err);
+        alert("Erreur lors de l'envoi du message.");
+    });
+}
+
+
+function sendVoice(file) {
+    const formData = new FormData();
+    formData.append('username', username);
+    formData.append('room_id', roomId);
+    formData.append('file', file);
+
+    fetch('/send/', {
+    method: 'POST',
+    headers: {
+        'X-CSRFToken': csrftoken
+    },
+    body: formData
+}).then(() => fetchMessages());
+}
+
+if ("Notification" in window && Notification.permission !== "granted") {
+    Notification.requestPermission();
+}
+
+let lastMessageCount = 0;
+
+function fetchMessages() {
+    fetch(`/getMessages/${roomName}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.messages.length === lastMessageCount) return; // Pas de nouveau message
+            lastMessageCount = data.messages.length;
+
+            const wasAtBottom = chatBox.scrollTop + chatBox.clientHeight >= chatBox.scrollHeight - 20;
+            chatBox.innerHTML = '';
+
+            data.messages.forEach(msg => {
+                const type = msg.file_url ? getFileType(msg.file_name) : 'text';
+                const content = msg.file_url
+                    ? { type: type, url: msg.file_url, name: msg.file_name }
+                    : msg.value;
+                addMessageToChat(msg.user, content, type, msg.date);
+            });
+
+            if (wasAtBottom) chatBox.scrollTop = chatBox.scrollHeight;
+        })
+        .catch(error => {
+            console.error("Erreur lors de la récupération des messages :", error);
+        });
+}
+
+function formatMessageText(text) {
+    // blocs ```lang
+    text = text.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
+        lang = lang || 'plaintext';
+        return `<pre><code class="language-${lang}">${escapeHtml(code)}</code></pre>`;
+    });
+
+    // blocs indentés (4 espaces ou tab)
+    text = text.replace(/^( {4}|\t)(.*(?:\n\1.*)*)/gm, (match) => {
+        const code = match.replace(/^( {4}|\t)/gm, '');
+        return `<pre><code class="language-plaintext">${escapeHtml(code)}</code></pre>`;
+    });
+
+    // inline code `code`
+    text = text.replace(/`([^`]+)`/g, (_, code) => {
+        return `<code>${escapeHtml(code)}</code>`;
+    });
+
+    // liens
+    text = text.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>');
+
+    // retour à la ligne
+    return text.replace(/\n/g, '<br>');
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+
+function flashChatBox() {
+    chatBox.classList.add('flash');
+    setTimeout(() => chatBox.classList.remove('flash'), 1000);
+}
+
+
+function addMessageToChat(sender, content, type, date) {
+    const msg = document.createElement('div');
+    msg.className = 'message';
+    const time = new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(sender.charAt(0))}&background=random&color=fff&size=40`;
+
+    let filePreview = '';
+    if (type !== 'text') {
+        filePreview = getFilePreview(content);
+        content = '';
+    } else {
+        content = formatMessageText(content);
+    }
+
+    msg.innerHTML = `
+        <img src="${avatar}" class="avatar" alt="${sender}">
+        <div class="message-content">
+            <p><strong>${sender}:</strong> ${content}</p>
+            ${filePreview}
+            <div class="message-time">${time}</div>
+        </div>
+    `;
+
+    chatBox.appendChild(msg);
+
+    // Activer la coloration syntaxique si bloc de code détecté
+    msg.querySelectorAll('pre code').forEach((block) => {
+        hljs.highlightElement(block);
+    });
+}
+
+
+function getFileType(filename) {
+    const ext = filename.split('.').pop().toLowerCase();
+    if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) return 'image/';
+    if (['mp4', 'webm'].includes(ext)) return 'video/';
+    if (['mp3', 'wav'].includes(ext)) return 'audio/';
+    return 'file/';
+}
+
+function getFilePreview(file) {
+    const safeUrl = encodeURI(file.url); // pour éviter les problèmes avec les caractères spéciaux
+    const fileName = file.name || 'fichier';
+
+    if (file.type.startsWith('image/')) {
+        return `
+            <img src="${safeUrl}" alt="Aperçu de l'image" class="file-preview" style="max-width:200px;">
+            <div style="margin-top:10px;">
+                <a href="${safeUrl}" download="${fileName}" title="Télécharger">
+                    <i class="fas fa-download"></i> Télécharger
+                </a>
+            </div>
+        `;
+    }
+
+    if (file.type.startsWith('video/')) {
+        return `
+            <video controls src="${safeUrl}" style="max-width:200px;"></video>
+            <div style="margin-top:10px;">
+                <a href="${safeUrl}" download="${fileName}" title="Télécharger la vidéo">
+                    <i class="fas fa-download"></i> Télécharger
+                </a>
+            </div>
+        `;
+    }
+
+    if (file.type.startsWith('audio/')) {
+        return `
+            <audio controls src="${safeUrl}"></audio>
+            <div style="margin-top:10px;">
+                <a href="${safeUrl}" download="${fileName}" title="Télécharger l'audio">
+                    <i class="fas fa-download"></i> Télécharger
+                </a>
+            </div>
+        `;
+    }
+
+    return `
+        <i class="fas fa-file"></i>
+        <a href="${safeUrl}" download="${fileName}" title="Télécharger le fichier">
+            ${fileName}
+        </a>
+    `;
+}
+
+</script>
 </body>
 </html>
