@@ -1,0 +1,450 @@
+{% load static %}
+{% load pwa %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>codeZone chat</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+   <meta property="og:image" content="{{ request.build_absolute_uri }}{% static 'Icone/icone.png' %}">
+  <link rel="manifest" href="{% static 'manifest.json' %}">
+{% progressive_web_app_meta %}
+<link rel="icon" type="image/png" href="{% static 'Icone/icone.png' %}">
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f9;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .chat-app {
+      width: 100%;
+      max-width: 480px;
+      height: 90vh;
+      display: flex;
+      flex-direction: column;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #fff;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+    .header {
+      background: #007bff;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      padding: 10px 15px;
+    }
+    .header img {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      margin-right: 15px;
+    }
+    .header h2 {
+      font-size: 18px;
+      margin: 0;
+    }
+    .header .controls {
+      margin-left: auto;
+    }
+    .header .controls button {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 18px;
+      margin-left: 10px;
+      cursor: pointer;
+    }
+    .chat-window {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .message {
+  opacity: 0;
+  transform: translateY(10px);
+  animation: fadeInUp 0.3s forwards;
+  margin: 5px 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  max-width: 75%;
+  word-break: break-word;
+}
+
+.message.sent {
+  background-color: #dcf8c6;
+  align-self: flex-end;
+}
+
+.message.received {
+  background-color: #f1f0f0;
+  align-self: flex-start;
+}
+
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+  
+    .message img,
+    .message video {
+      max-width: 100%;
+      border-radius: 10px;
+    }
+    .message audio {
+      width: 100%;
+      margin-top: 5px;
+    }
+    .media-actions {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 5px;
+    }
+    .media-actions button {
+      background: none;
+      border: 2px;
+      color: #3bff00;
+      cursor: pointer;
+      font-size: 25px;
+    }
+    .input-area {
+      padding: 10px;
+      display: flex;
+      align-items: center;
+      border-top: 1px solid #ddd;
+    }
+    .input-area input {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 20px;
+      margin-right: 10px;
+    }
+    .input-area button {
+      background: #007bff;
+      color: #fff;
+      border: none;
+      padding: 10px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 18px;
+    }
+    .file-preview div {
+      background: #f1f1f1;
+      padding: 5px;
+      border-radius: 5px;
+      margin-bottom: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .file-preview div textarea {
+      width: 100%;
+      margin-top: 5px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      padding: 5px;
+      font-size: 14px;
+    }
+    .file-input{
+        display :none;
+    }
+   .date-label {
+  text-align: center;
+  margin: 10px 0;
+  font-weight: bold;
+  color: #555;
+}
+
+.message.fade-in {
+  animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.seen {
+  font-size: 0.75em;
+  color: #4caf50;
+  margin-left: 5px;
+}
+  </style>
+</head>
+<body>
+    
+  <div class="chat-app">
+    <!-- Header -->
+    <div class="header">
+      <img src="https://ui-avatars.com/api/?name={{other_user.username}}&background=random" alt="Profile">
+      <h2>{{other_user.username }}</h2>
+      <div class="controls">
+        <button title="Appel audio"><i class="fas fa-phone"></i></button>
+        <button title="Appel vidéo"><i class="fas fa-video"></i></button>
+      </div>
+    </div>
+    <!-- Chat Window -->
+    <div class="chat-window" id="chatWindow"></div>
+    <!-- Input Area -->
+    <div class="input-area">
+      <input type="text" id="messageInput" placeholder="Tapez un message...">
+      <button id="fileBtn"><i class="fas fa-paperclip"></i></button>
+      <input type="file" id="fileInput" class="file-input" multiple>
+      <button id="sendBtn"><i class="fas fa-paper-plane"></i></button>
+    </div>
+    <!-- File Preview -->
+    <div class="file-preview" id="filePreview"></div>
+  </div>
+<audio id="notify-sound" src="{% static 'sounds/notification.mp3' %}" preload="auto"></audio>
+<div id="typing-status" style="font-style: italic; color: gray; margin-top: 5px;"></div>
+ 
+<script>
+let typingTimeout;
+const chatWindow = document.getElementById("chatWindow");
+const messageInput = document.getElementById("messageInput");
+const sendBtn = document.getElementById("sendBtn");
+const fileInput = document.getElementById("fileInput");
+const fileBtn = document.getElementById("fileBtn");
+const filePreview = document.getElementById("filePreview");
+const notifySound = document.getElementById("notify-sound");
+
+const CHAT_ID = "{{ chat.id }}";
+const OTHER_USER = "{{ other_user.username }}";
+
+const getFileIcon = (type) => {
+  if (type.startsWith("image")) return "🖼️";
+  if (type.startsWith("video")) return "🎥";
+  if (type.startsWith("audio")) return "🎵";
+  if (type.endsWith("pdf")) return "📄";
+  return "📁";
+};
+
+function scrollToBottom() {
+  setTimeout(() => {
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+  }, 100);
+}
+
+function renderMessage(msg) {
+  const container = document.createElement("div");
+  container.classList.add("message", msg.is_self ? "sent" : "received");
+
+  let content = "";
+
+  if (!msg.is_self && msg.sender) {
+    content += `<strong>${msg.sender}</strong><br>`;
+  }
+
+  if (msg.file_url) {
+    const type = msg.file_type || "";
+    if (type.startsWith("image")) {
+      content += `<img src="${msg.file_url}">`;
+    } else if (type.startsWith("video")) {
+      content += `<video controls src="${msg.file_url}"></video>`;
+    } else if (type.startsWith("audio")) {
+      content += `<audio controls src="${msg.file_url}"></audio>`;
+    } else {
+      content += `<a href="${msg.file_url}" download>${msg.file_url.split('/').pop()}</a>`;
+    }
+
+    content += `
+      <div class="media-actions">
+        <button onclick="downloadFile('${msg.file_url}')"><i class="fas fa-download"></i></button>
+        <button onclick="shareFile('${msg.file_url}', '${msg.file_description || ''}')"><i class="fas fa-share"></i></button>
+      </div>
+      <p>${msg.file_description || ''}</p>
+    `;
+  }
+
+  if (msg.content) {
+    content += `<p>${msg.content}</p>`;
+  }
+
+  content += `<small>${msg.timestamp}</small>`;
+  if (msg.is_self && msg.is_read) {
+    content += ` <span class="seen">Vu</span>`;
+  }
+
+  container.innerHTML = content;
+  return container;
+}
+
+function formatDate(dateString) {
+  const today = new Date();
+  const messageDate = new Date(dateString);
+  const diffTime = today.setHours(0,0,0,0) - messageDate.setHours(0,0,0,0);
+  const oneDay = 86400000;
+
+  if (diffTime === 0) return "Aujourd’hui";
+  if (diffTime === oneDay) return "Hier";
+
+  return messageDate.toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
+}
+
+function loadMessages() {
+  fetch(`/get-chat-messages/${CHAT_ID}/`)
+    .then(response => response.json())
+    .then(data => {
+      const messages = data.messages;
+      const typingBox = document.getElementById("typing-status");
+
+      typingBox.innerText = data.typing ? `${OTHER_USER} est en train d’écrire...` : '';
+
+      chatWindow.innerHTML = '';
+      let lastDate = '';
+      messages.forEach(msg => {
+        const msgDate = msg.full_date;
+        if (msgDate !== lastDate) {
+          const dateLabel = document.createElement("div");
+          dateLabel.classList.add("date-label");
+          dateLabel.innerText = formatDate(msgDate);  
+          chatWindow.appendChild(dateLabel);
+          lastDate = msgDate;
+        }
+
+        const msgNode = renderMessage(msg);
+        chatWindow.appendChild(msgNode);
+      });
+
+      scrollToBottom();
+    });
+}
+
+sendBtn.addEventListener("click", () => {
+  const message = messageInput.value.trim();
+  const files = Array.from(fileInput.files);
+  const formData = new FormData();
+
+  formData.append("chat_id", CHAT_ID);
+  formData.append("csrfmiddlewaretoken", "{{ csrf_token }}");
+
+  if (message) {
+    formData.append("content", message);
+  }
+
+  if (files.length > 0) {
+    formData.append("file", files[0]);
+    const description = filePreview.querySelector("textarea")?.value || "";
+    formData.append("file_description", description);
+  }
+
+  fetch("{% url 'send_private_message' %}", {
+    method: "POST",
+    body: formData
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.content || data.file_url) {
+      const fakeMsg = {
+        sender: "{{ request.user.username }}",
+        content: data.content,
+        file_url: data.file_url,
+        file_description: data.file_description,
+        file_type: data.file_type,
+        timestamp: data.timestamp,
+        full_date: new Date().toISOString().split('T')[0],
+        is_self: true,
+        is_read: false
+      };
+
+      const msgNode = renderMessage(fakeMsg);
+      chatWindow.appendChild(msgNode);
+      scrollToBottom();
+    }
+
+    setTimeout(loadMessages, 1000);
+    messageInput.value = "";
+    fileInput.value = "";
+    filePreview.innerHTML = "";
+  });
+});
+
+fileBtn.addEventListener("click", () => fileInput.click());
+
+fileInput.addEventListener("change", (e) => {
+  const files = Array.from(e.target.files);
+  filePreview.innerHTML = "";
+
+  files.forEach((file) => {
+    const fileDiv = document.createElement("div");
+    fileDiv.innerHTML = `
+      <span>${getFileIcon(file.type)} ${file.name}</span>
+      <button onclick="removeFile(this)">Supprimer</button>
+      <textarea placeholder="Ajoutez une description..."></textarea>
+    `;
+    filePreview.appendChild(fileDiv);
+  });
+});
+
+function removeFile(btn) {
+  btn.parentElement.remove();
+}
+
+
+async function shareFile(fileUrl, description = "") {
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: "Fichier partagé",
+        text: description || "Voici un fichier à voir",
+        url: fileUrl
+      });
+    } catch (error) {
+      console.error("Erreur lors du partage :", error);
+    }
+  } else {
+    alert("Partage non supporté par ce navigateur.");
+  }
+}
+
+function downloadFile(url) {
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = url.split('/').pop(); // nom du fichier
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+messageInput.addEventListener("input", () => {
+  fetch(`/typing/${CHAT_ID}/`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ typing: true })
+  });
+
+  clearTimeout(typingTimeout);
+  typingTimeout = setTimeout(() => {
+    fetch(`/typing/${CHAT_ID}/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ typing: false })
+    });
+  }, 3000);
+});
+
+messageInput.addEventListener("keypress", (e) => {
+  if (e.key === "Enter") sendBtn.click();
+});
+
+loadMessages();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "name": "CodeZone",
+  "short_name": "CodeZone",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4f46e5",
+  "icons": [
+    {
+      "src": "/static/Icone/icone.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -1,0 +1,798 @@
+
+{% load static %}
+{% load pwa %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeSniper - Publier un Snippet</title>
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+{% progressive_web_app_meta %}
+  <title>CodeZone - Snippets Utiles Multilangages</title>
+  
+  <meta property="og:image" content="{{ request.build_absolute_uri }}{% static 'Icone/icone.png'%} ">
+  
+  <link rel="icon" type="image/png" href="{% static 'Icone/icone.png' %}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .code-block {
+            position: relative;
+        }
+        .code-actions {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .code-block:hover .code-actions {
+            opacity: 1;
+        }
+        .preview-modal {
+            transition: all 0.3s ease;
+        }
+        .preview-modal:not(.active) {
+            opacity: 0;
+            visibility: hidden;
+        }
+        .tab {
+            cursor: pointer;
+        }
+        .tab.active {
+            border-bottom: 2px solid #3b82f6;
+            color: #3b82f6;
+        }
+        .toast {
+            animation: fadeInOut 3s ease-in-out;
+        }
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0; transform: translateY(20px); }
+            10%, 90% { opacity: 1; transform: translateY(0); }
+        }
+        .editor {
+            min-height: 200px;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.375rem;
+            padding: 1rem;
+            font-family: monospace;
+            background-color: #f8fafc;
+        }
+        .pagination .page-item.active {
+            background-color: #3b82f6;
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans antialiased">
+    <!-- Navigation -->
+    <nav class="bg-indigo-700 text-white shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-code text-2xl"></i>
+                    <span class="text-xl font-bold">CodeSniper</span>
+                </div>
+                <div class="hidden md:flex items-center space-x-6">
+                    <a href="index.html" class="hover:text-indigo-200 transition">Accueil</a>
+                    <a href="#" class="hover:text-indigo-200 transition">Explorer</a>
+                    <a href="publish.html" class="hover:text-indigo-200 transition">Créer</a>
+                    <a href="#" class="hover:text-indigo-200 transition">Communauté</a>
+                    <button class="bg-white text-indigo-700 px-4 py-2 rounded-lg font-medium hover:bg-indigo-100 transition">
+                        <i class="fas fa-user mr-2"></i>Connexion
+                    </button>
+                </div>
+                <button class="md:hidden text-xl">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Form Section -->
+    <section class="container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-md overflow-hidden">
+            <!-- Form Header -->
+            <div class="bg-indigo-700 text-white p-6">
+                <h2 class="text-2xl font-bold">Publier un nouveau snippet</h2>
+                <p class="text-indigo-100">Partagez votre code avec la communauté des développeurs</p>
+            </div>
+            
+            <!-- Form Body -->
+            <form id="snippetForm" class="p-6 space-y-6" action="{%url 'create'%}" method="post">
+                {% csrf_token %}
+                <!-- Title -->
+                <div class="space-y-2">
+                    <label for="snippetTitle" class="block font-medium text-gray-700">Titre du snippet *</label>
+                    <input type="text" id="snippetTitle" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" name="title" placeholder="Ex: Formulaire de connexion moderne" required>
+                </div>
+                
+                <!-- Description -->
+                <div class="space-y-2">
+                    <label for="snippetDesc" class="block font-medium text-gray-700">Description *</label>
+                    <textarea id="snippetDesc" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Décrivez ce que fait votre snippet et dans quels cas l'utiliser..." name="description" required></textarea>
+                </div>
+                
+                <!-- Code Editors -->
+                <div class="space-y-4">
+                    <label class="block font-medium text-gray-700">Code *</label>
+                    
+                    <!-- HTML Editor -->
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center">
+                            <label for="htmlCode" class="font-medium text-gray-600">HTML</label>
+                            <button type="button" class="text-indigo-600 text-sm" onclick="formatCode('htmlCode')">
+                                <i class="fas fa-magic mr-1"></i> Formater
+                            </button>
+                        </div>
+                        <div class="editor relative">
+                            <textarea id="htmlCode" class="w-full h-40 p-2 font-mono text-sm focus:outline-none" name="html_code"></textarea>
+                        </div>
+                    </div>
+                    
+                    <!-- CSS Editor -->
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center">
+                            <label for="cssCode" class="font-medium text-gray-600">CSS</label>
+                            <button type="button" class="text-indigo-600 text-sm" onclick="formatCode('cssCode')">
+                                <i class="fas fa-magic mr-1"></i> Formater
+                            </button>
+                        </div>
+                        <div class="editor relative">
+                            <textarea id="cssCode" class="w-full h-40 p-2 font-mono text-sm focus:outline-none" name="css_code"></textarea>
+                        </div>
+                    </div>
+                    
+                    <!-- JS Editor -->
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center">
+                            <label for="jsCode" class="font-medium text-gray-600">JavaScript (optionnel)</label>
+                            <button type="button" class="text-indigo-600 text-sm" onclick="formatCode('jsCode')">
+                                <i class="fas fa-magic mr-1"></i> Formater
+                            </button>
+                        </div>
+                        <div class="editor relative">
+                            <textarea id="jsCode" class="w-full h-40 p-2 font-mono text-sm focus:outline-none" name="js_code"></textarea>
+                        </div>
+                    </div>
+                    
+                    <!-- Preview Button -->
+                    <div class="flex justify-end">
+                        <button type="button" onclick="previewSnippet()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-300 transition inline-flex items-center">
+                            <i class="fas fa-eye mr-2"></i> Aperçu
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Additional Info -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Language -->
+                    <div class="space-y-2">
+                        <label class="block font-medium text-gray-700">Langage principal *</label>
+                        <div class="flex flex-wrap gap-2">
+                            <div>
+                                <input type="radio" id="langHtml" name="language" value="html" class="hidden peer" name="language" checked>
+                                <label for="langHtml" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg cursor-pointer peer-checked:border-indigo-500 peer-checked:bg-indigo-50 hover:text-gray-600">
+                                    <i class="fab fa-html5 text-orange-500 mr-2"></i> HTML
+                                </label>
+                            </div>
+                            <div>
+                                <input type="radio" id="langCss" name="language" value="css" class="hidden peer">
+                                <label for="langCss" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg cursor-pointer peer-checked:border-indigo-500 peer-checked:bg-indigo-50 hover:text-gray-600">
+                                    <i class="fab fa-css3-alt text-blue-500 mr-2"></i> CSS
+                                </label>
+                            </div>
+                            <div>
+                                <input type="radio" id="langJs" name="language" value="js" class="hidden peer">
+                                <label for="langJs" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg cursor-pointer peer-checked:border-indigo-500 peer-checked:bg-indigo-50 hover:text-gray-600">
+                                    <i class="fab fa-js-square text-yellow-400 mr-2"></i> JavaScript
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Difficulty -->
+                    <div class="space-y-2">
+                        <label class="block font-medium text-gray-700">Difficulté *</label>
+                        <div class="flex flex-wrap gap-2">
+                            <div>
+                                <input type="radio" id="diffEasy" name="difficulty" value="easy" class="hidden peer">
+                                <label for="diffEasy" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg cursor-pointer peer-checked:border-indigo-500 peer-checked:bg-indigo-50 hover:text-gray-600">
+                                    <i class="fas fa-smile text-green-500 mr-2"></i> Facile
+                                </label>
+                            </div>
+                            <div>
+                                <input type="radio" id="diffMedium" name="difficulty" value="medium" class="hidden peer" checked>
+                                <label for="diffMedium" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg cursor-pointer peer-checked:border-indigo-500 peer-checked:bg-indigo-50 hover:text-gray-600">
+                                    <i class="fas fa-meh text-yellow-500 mr-2"></i> Moyen
+                                </label>
+                            </div>
+                            <div>
+                                <input type="radio" id="diffHard" name="difficulty" value="hard" class="hidden peer">
+                                <label for="diffHard" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg cursor-pointer peer-checked:border-indigo-500 peer-checked:bg-indigo-50 hover:text-gray-600">
+                                    <i class="fas fa-frown text-red-500 mr-2"></i> Avancé
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Tags -->
+                    <div class="space-y-2">
+                        <label for="snippetTags" class="block font-medium text-gray-700">Tags (séparés par des virgules)</label>
+                        <input type="text" id="snippetTags" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="form, login, ui, responsive"name="tags">
+                    </div>
+                    
+                    <!-- Visibility -->
+                    <div class="space-y-2">
+                        <label class="block font-medium text-gray-700">Visibilité</label>
+                        <div class="flex items-center space-x-4">
+                            <div>
+                                <input type="radio" id="visibilityPublic" name="visibility" value="public" class="hidden peer" checked>
+                                <label for="visibilityPublic" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg cursor-pointer peer-checked:border-indigo-500 peer-checked:bg-indigo-50 hover:text-gray-600">
+                                    <i class="fas fa-globe-americas text-indigo-500 mr-2"></i> Public
+                                </label>
+                            </div>
+                            <div>
+                                <input type="radio" id="visibilityPrivate" name="visibility" value="private" class="hidden peer">
+                                <label for="visibilityPrivate" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg cursor-pointer peer-checked:border-indigo-500 peer-checked:bg-indigo-50 hover:text-gray-600">
+                                    <i class="fas fa-lock text-gray-500 mr-2"></i> Privé
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                
+                      
+                
+                <!-- License -->
+                <div class="space-y-2">
+                    <label for="license" class="block font-medium text-gray-700">Licence</label>
+                    <select id="license" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" name="license">
+                        <option value="mit">MIT License</option>
+                        <option value="apache">Apache License 2.0</option>
+                        <option value="gpl">GNU GPLv3</option>
+                        <option value="unlicense">The Unlicense</option>
+                        <option value="custom">Licence personnalisée</option>
+                    </select>
+                </div>
+                
+                <!-- Submit Buttons -->
+                <div class="flex justify-between pt-6">
+                    <button type="button" class="text-gray-600 hover:text-gray-800 font-medium">
+                        <i class="fas fa-times mr-2"></i> Annuler
+                    </button>
+                    <div class="space-x-3">
+                        <button type="submit" id="saveDraftBtn" class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg font-medium hover:bg-gray-300 transition inline-flex items-center" name="save_draft">
+                            <i class="fas fa-save mr-2"></i> Sauvegarder comme brouillon
+                        </button>
+                        <button type="submit" class="bg-indigo-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-indigo-700 transition inline-flex items-center">
+                            <i class="fas fa-paper-plane mr-2"></i> Publier le snippet
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    
+
+    <!-- Preview Modal -->
+    <div id="previewModal" class="preview-modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" style="display: none;">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div class="bg-indigo-700 text-white p-4 flex justify-between items-center">
+                <h3 class="text-lg font-bold">Aperçu du snippet</h3>
+                <button id="closePreviewBtn" class="text-white hover:text-indigo-200 text-xl">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="flex-1 overflow-auto">
+                <iframe id="previewFrame" class="w-full h-full min-h-[500px] border-0"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast fixed bottom-4 right-4 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg hidden">
+        Code copié dans le presse-papiers!
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-gray-400 py-12 px-4">
+        <div class="container mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-code text-2xl mr-2 text-indigo-500"></i>
+                        <span class="text-xl font-bold text-white">CodeSniper</span>
+                    </div>
+                    <p class="mb-4">La meilleure collection de snippets de code pour développeurs.</p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-white">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white">
+                            <i class="fab fa-github"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white">
+                            <i class="fab fa-discord"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                
+    </footer>
+
+    <script>
+        // Sample data for snippets
+        const snippets = [
+            {
+                id: 1,
+                title: "Formulaire de connexion moderne",
+                description: "Un formulaire de connexion élégant avec effets de focus et validation visuelle.",
+                author: "Jean Dupont",
+                authorImg: "https://randomuser.me/api/portraits/men/32.jpg",
+                views: 124,
+                likes: 56,
+                language: ["html", "css"],
+                difficulty: "easy",
+                date: "2 jours ago",
+                html: `<form class="login-form">
+    <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" placeholder="votre@email.com">
+    </div>
+    <div class="form-group">
+        <label for="password">Mot de passe</label>
+        <input type="password" id="password" placeholder="••••••••">
+    </div>
+    <button type="submit">Connexion</button>
+</form>`,
+                css: `.login-form {
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 2rem;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #4a5568;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 5px;
+    transition: all 0.3s;
+}
+
+.form-group input:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+.login-form button {
+    width: 100%;
+    padding: 0.75rem;
+    background: #4f46e5;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.login-form button:hover {
+    background: #4338ca;
+}`
+            },
+            {
+                id: 2,
+                title: "Carousel responsive",
+                description: "Carousel d'images avec navigation et autoplay en pur JavaScript.",
+                author: "Marie Martin",
+                authorImg: "https://randomuser.me/api/portraits/women/44.jpg",
+                views: 89,
+                likes: 42,
+                language: ["html", "css", "js"],
+                difficulty: "medium",
+                date: "1 semaine ago",
+                html: `<div class="carousel">
+    <div class="slides">
+        <div class="slide active">
+            <img src="https://picsum.photos/800/400?random=1" alt="Slide 1">
+        </div>
+        <div class="slide">
+            <img src="https://picsum.photos/800/400?random=2" alt="Slide 2">
+        </div>
+    </div>
+    <button class="prev">&#10094;</button>
+    <button class="next">&#10095;</button>
+</div>`,
+                css: `.carousel {
+    position: relative;
+    max-width: 800px;
+    margin: 0 auto;
+    overflow: hidden;
+}
+
+.slides {
+    display: flex;
+    transition: transform 0.5s ease;
+}
+
+.slide {
+    min-width: 100%;
+}
+
+.slide img {
+    width: 100%;
+    height: auto;
+}
+
+.carousel button {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0,0,0,0.5);
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    cursor: pointer;
+}
+
+.prev {
+    left: 10px;
+}
+
+.next {
+    right: 10px;
+}`,
+                js: `const carousel = document.querySelector('.carousel');
+const slides = document.querySelector('.slides');
+const slideItems = document.querySelectorAll('.slide');
+const prevBtn = document.querySelector('.prev');
+const nextBtn = document.querySelector('.next');
+
+let currentIndex = 0;
+const slideCount = slideItems.length;
+
+function goToSlide(index) {
+    slides.style.transform = \`translateX(-\${index * 100}%)\`;
+    currentIndex = index;
+}
+
+prevBtn.addEventListener('click', () => {
+    currentIndex = (currentIndex - 1 + slideCount) % slideCount;
+    goToSlide(currentIndex);
+});
+
+nextBtn.addEventListener('click', () => {
+    currentIndex = (currentIndex + 1) % slideCount;
+    goToSlide(currentIndex);
+});
+
+// Auto-advance every 5 seconds
+setInterval(() => {
+    currentIndex = (currentIndex + 1) % slideCount;
+    goToSlide(currentIndex);
+}, 5000);`
+            },
+            {
+                id: 3,
+                title: "Notifications Toast",
+                description: "Système de notifications Toast personnalisables avec animations.",
+                author: "Thomas Leroy",
+                authorImg: "https://randomuser.me/api/portraits/men/75.jpg",
+                views: 156,
+                likes: 78,
+                language: ["js", "css"],
+                difficulty: "easy",
+                date: "3 jours ago",
+                html: `<button id="showToast">Afficher Toast</button>`,
+                css: `.toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 15px 20px;
+    background: #333;
+    color: white;
+    border-radius: 5px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.3s;
+}
+
+.toast.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.toast.success {
+    background: #4CAF50;
+}
+
+.toast.error {
+    background: #F44336;
+}
+
+.toast.warning {
+    background: #FF9800;
+}`,
+                js: `function showToast(message, type = '') {
+    const toast = document.createElement('div');
+    toast.className = \`toast \${type}\`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.classList.add('visible');
+    }, 100);
+    
+    setTimeout(() => {
+        toast.classList.remove('visible');
+        setTimeout(() => {
+            toast.remove();
+        }, 300);
+    }, 3000);
+}
+
+document.getElementById('showToast').addEventListener('click', () => {
+    showToast('Ceci est une notification!', 'success');
+});`
+            },
+            {
+                id: 4,
+                title: "Menu déroulant animé",
+                description: "Menu déroulant avec animation en CSS et interaction en JavaScript.",
+                author: "Sophie Lambert",
+                authorImg: "https://randomuser.me/api/portraits/women/68.jpg",
+                views: 98,
+                likes: 34,
+                language: ["html", "css", "js"],
+                difficulty: "medium",
+                date: "5 jours ago",
+                html: `<nav class="dropdown-menu">
+    <button class="dropdown-trigger">Menu <i class="fas fa-chevron-down"></i></button>
+    <ul class="dropdown-content">
+        <li><a href="#">Accueil</a></li>
+        <li><a href="#">Produits</a></li>
+        <li><a href="#">Services</a></li>
+        <li><a href="#">Contact</a></li>
+    </ul>
+</nav>`,
+                css: `.dropdown-menu {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-trigger {
+    padding: 10px 15px;
+    background: #4f46e5;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dropdown-content {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 200px;
+    background: white;
+    border-radius: 5px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+    pointer-events: none;
+}
+
+.dropdown-menu.active .dropdown-content {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: all;
+}
+
+.dropdown-content li a {
+    display: block;
+    padding: 10px 15px;
+    color: #333;
+    text-decoration: none;
+    transition: background 0.2s;
+}
+
+.dropdown-content li a:hover {
+    background: #f3f4f6;
+}`,
+                js: `const dropdown = document.querySelector('.dropdown-menu');
+const trigger = dropdown.querySelector('.dropdown-trigger');
+
+trigger.addEventListener('click', () => {
+    dropdown.classList.toggle('active');
+});
+
+// Close dropdown when clicking outside
+document.addEventListener('click', (e) => {
+    if (!dropdown.contains(e.target)) {
+        dropdown.classList.remove('active');
+    }
+});`
+            },
+            {
+                id: 5,
+                title: "Bouton toggle dark mode",
+                description: "Bouton pour basculer entre le mode clair et sombre avec stockage des préférences.",
+                author: "Paul Bernard",
+                authorImg: "https://randomuser.me/api/portraits/men/92.jpg",
+                views: 145,
+                likes: 87,
+                language: ["html", "css", "js"],
+                difficulty: "medium",
+                date: "1 jour ago",
+                html: `<div class="theme-toggle">
+    <button id="toggleTheme">
+        <i class="fas fa-moon"></i>
+        <i class="fas fa-sun"></i>
+    </button>
+</div>`,
+                css: `.theme-toggle button {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #f3f4f6;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.theme-toggle button i {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    transition: all 0.3s ease;
+}
+
+.theme-toggle button .fa-moon {
+    opacity: 1;
+}
+
+.theme-toggle button .fa-sun {
+    opacity: 0;
+}
+
+/* Dark mode styles */
+.dark-mode {
+    background: #1f2937;
+    color: #f3f4f6;
+}
+
+.dark-mode .theme-toggle button {
+    background: #374151;
+}
+
+.dark-mode .theme-toggle button .fa-moon {
+    opacity: 0;
+}
+
+.dark-mode .theme-toggle button .fa-sun {
+    opacity: 1;
+}`,
+                js: `const toggleBtn = document.getElementById('toggleTheme');
+const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
+const currentTheme = localStorage.getItem('theme');
+
+if (currentTheme === 'dark' || (!currentTheme && prefersDarkScheme.matches)) {
+    document.body.classList.add('dark-mode');
+}
+
+toggleBtn.addEventListener('click', () => {
+    document.body.classList.toggle('dark-mode');
+    const theme = document.body.classList.contains('dark-mode') ? 'dark' : 'light';
+    localStorage.setItem('theme', theme);
+});`
+            },
+            {
+                id: 6,
+                title: "Animation de chargement",
+                description: "Animation de chargement simple en CSS pur.",
+                author: "Lucie Petit",
+                authorImg: "https://randomuser.me/api/portraits/women/33.jpg",
+                views: 76,
+                likes: 29,
+                language: ["html", "css"],
+                difficulty: "easy",
+                date: "4 jours ago",
+                html: `<div class="loading-spinner"></div>`,
+                css: `.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #f3f4f6;
+    border-top: 5px solid #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}`
+            }
+        ];
+
+        // Pagination variables
+        let currentPage = 1;
+        const snippetsPerPage = 6;
+        let filteredSnippets = [...snippets];
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            renderSnippets();
+            renderPagination();
+            setupEventListeners();
+        });
+
+        // Format code when clicking format button
+        function formatCode(editorId) {
+            const editor = document.getElementById(editorId);
+            if (!editor) return;
+            
+            try {
+                const formattedCode = js_beautify(editor.value, {
+                    indent_size: 2,
+                    indent_char: ' ',
+                    max_preserve_newlines: 1,
+                    preserve_newlines: true,
+                    brace_style: 'collapse,preserve-inline',
+                    wrap_line_length: 0,
+                    indent_empty_lines: false
+                });
+                editor.value = formattedCode;
+            } catch (e) {
+                console.error("Erreur de formatage:", e);
+                showToast("Erreur de formatage du code", "error");
+            }
+        }
+
+        // Preview snippet in modal
+        function previewSnippet() {
+            const html = document.getElementById('htmlCode').value;
+            const css = document.getElementById('cssCode').value;
+            const js = document.getElementById('jsCode').value;
+            
+            const previewFrame = document.getElementById('previewFrame');
+            const previewDoc = previewFrame.contentDocument || previewFrame.contentWindow.document;
+            
+            previewDoc.open();
+            previewDoc.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <style>
+                        body { font-family: sans-serif; padding: 20px; }
+                        ${css}
+                    </style>
+                </head>
+                <body>
+                    ${html}
+                    <script>${js}<\/script>
+                </body>
+                </html>

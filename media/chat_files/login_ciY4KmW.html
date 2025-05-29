@@ -1,0 +1,81 @@
+{% load static %}
+{% load pwa %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connexion - CodeZone</title>
+  <link rel="manifest" href="{% static 'manifest.json' %}">
+{% progressive_web_app_meta %}
+  <meta property="og:image" content="{{ request.build_absolute_uri }}{% static 'Icone/icone.png'%}">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="icon" type="image/png" href="{% static 'Icone/icone.png' %}">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body class="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600 font-['Poppins'] p-4">
+
+  <div class="bg-white rounded-xl shadow-lg max-w-md w-full p-8 space-y-6">
+    <div class="text-center">
+      <div class="inline-flex items-center justify-center w-16 h-16 bg-indigo-500 text-white rounded-full shadow-lg">
+        <i class="fas fa-user-lock text-xl"></i>
+      </div>
+      <h2 class="text-2xl font-bold text-gray-800 mt-4">Connexion</h2>
+      <p class="text-gray-500 text-sm">Entrez vos identifiants pour accéder au chat</p>
+    </div>
+
+    <form method="POST" class="space-y-4">
+      {% csrf_token %}
+   {% if messages %}
+  <div class="bg-red-100 border border-red-300 text-red-700 px-4 py-3 rounded text-sm space-y-1">
+    {% for message in messages %}
+      <p>{{ message }}</p>
+    {% endfor %}
+  </div>
+{% endif %}
+      <div>
+        <label class="block text-sm text-gray-700">Nom d'utilisateur</label>
+        <input type="text" name="username" class="w-full border border-gray-300 rounded-lg px-4 py-3 mt-1 focus:outline-none focus:ring-2 focus:ring-indigo-400" required>
+      </div>
+
+      <div>
+        <label class="block text-sm text-gray-700">Mot de passe</label>
+        <input type="password" name="password" class="w-full border border-gray-300 rounded-lg px-4 py-3 mt-1 focus:outline-none focus:ring-2 focus:ring-indigo-400" required>
+      </div>
+
+      <button type="submit" class="w-full bg-indigo-500 text-white font-semibold py-3 rounded-lg hover:bg-indigo-600 transition">
+        Se connecter
+      </button>
+    </form>
+
+    <p class="text-center text-sm text-gray-500">Pas encore de compte ? <a href="{% url 'register' %}" class="text-indigo-600 hover:underline">Créer un compte</a></p>
+  </div>
+<script>
+  let deferredPrompt;
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault(); // Empêche Chrome d'afficher la bannière automatiquement
+    deferredPrompt = e;
+
+    // Crée le bouton "Installer CodeZone"
+    const installBtn = document.createElement('button');
+    installBtn.textContent = "Installer CodeZone";
+    installBtn.className = "fixed bottom-4 right-4 bg-indigo-600 text-white px-4 py-2 rounded shadow-lg hover:bg-indigo-700 z-50";
+    document.body.appendChild(installBtn);
+
+    installBtn.addEventListener('click', () => {
+      deferredPrompt.prompt(); // Affiche la bannière d'installation
+
+      deferredPrompt.userChoice.then((choiceResult) => {
+        if (choiceResult.outcome === 'accepted') {
+          console.log('L\'utilisateur a accepté l\'installation');
+        } else {
+          console.log('L\'utilisateur a refusé l\'installation');
+        }
+        installBtn.remove(); // Supprime le bouton après action
+      });
+    });
+  });
+</script>
+</body>
+</html>

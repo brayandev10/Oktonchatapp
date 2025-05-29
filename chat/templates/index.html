@@ -1,0 +1,225 @@
+{% load static %}
+{% load pwa %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+  {% progressive_web_app_meta %}
+  <meta property="og:image" content="{{ request.build_absolute_uri }}{% static 'Icone/icone.png'%}">
+  <link rel="icon" type="image/png" href="{% static 'Icone/icone.png' %}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <title>CodeZone - Developer Community</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Ubuntu+Mono:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Ubuntu Mono', monospace;
+            background-color: #0a0a0a;
+            overflow-x: hidden;
+        }
+        
+        .matrix-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.15;
+        }
+        
+        .code-rain {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .matrix-text {
+            text-shadow: 0 0 5px #10ff00, 0 0 10px #10ff00;
+        }
+        
+        .community-btn {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(16, 255, 0, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(16, 255, 0, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(16, 255, 0, 0);
+            }
+        }
+        
+        .code-terminal {
+            border: 1px solid #10ff00;
+            background-color: rgba(0, 20, 0, 0.5);
+            border-radius: 5px;
+        }
+        
+        .typing-animation {
+            border-right: 2px solid #10ff00;
+            animation: blink 0.75s step-end infinite;
+        }
+        
+        @keyframes blink {
+            from, to { border-color: transparent }
+            50% { border-color: #10ff00; }
+        }
+    </style>
+</head>
+<body class="text-green-500">
+    <div id="matrix" class="code-rain"></div>
+    <div class="matrix-bg"></div>
+    
+    <div class="container mx-auto px-4 py-12 min-h-screen flex flex-col">
+        <!-- Header -->
+        <header class="mb-12 md:mb-20">
+            <div class="flex justify-between items-center">
+                <div class="text-2xl md:text-3xl font-bold matrix-text">
+                    CodeZone
+                </div>
+                <div id="mobile-menu" class="space-x-4 hidden md:flex">
+                    
+                    <a href="https://github.com/brayandev10" class="hover:text-green-300 transition">Resources</a>
+                    <a href="https://t.me/devAppsWeb" class="hover:text-green-300 transition">Contact</a>
+                </div>
+                <button class="md:hidden">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Hero Section -->
+        <main class="flex-grow flex flex-col justify-center">
+            <div class="mb-8">
+                <h1 class="text-3xl md:text-6xl font-bold mb-4 matrix-text">
+                    {% if user.is_authenticated %}
+                    <span class="typing-animation">Welcome to CodeZone {{user.username}}</span>
+                    {%else%}
+                    <span class="typing-animation">Welcome to CodeZone</span>
+                    {%endif%}
+                </h1>
+                <p class="text-lg md:text-xl mb-6 text-gray-400 max-w-3xl">
+                    The ultimate developer community created by 
+                    <span class="text-green-400 font-bold">Brayan Dev</span>. 
+                    Join us to collaborate, learn, and grow together in the world of programming.
+                </p>
+               {% if user.is_authenticated %}
+                <button class="community-btn bg-green-600 hover:bg-green-700 text-black font-bold py-3 px-6 rounded-md transition duration-300 transform hover:scale-105" onclick="window.location.href='{% url 'list' %}'">
+                   explorez CodeZone >
+                </button>
+                   {%else%}
+                <button class="community-btn bg-green-600 hover:bg-green-700 text-black font-bold py-3 px-6 rounded-md transition duration-300 transform hover:scale-105" onclick="window.location.href='{% url 'login' %}'">
+                    Join the Community
+                </button>
+                    {%endif%}
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-12">
+                <div class="code-terminal p-4">
+                    <div class="flex space-x-2 mb-3">
+                        <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                        <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                        <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                    </div>
+                    <pre class="font-mono overflow-x-auto">
+<span class="text-purple-400">const</span> <span class="text-blue-400">codezone</span> = {
+  <span class="text-yellow-400">members</span>: <span class="text-green-400">"10K+"</span>,
+  <span class="text-yellow-400">languages</span>: [<span class="text-green-400">"JS"</span>, <span class="text-green-400">"Python"</span>, <span class="text-green-400">"Go"</span>],
+  <span class="text-yellow-400">founder</span>: <span class="text-green-400">"Brayan Dev"</span>,
+  <span class="text-yellow-400">join</span>() {
+    <span class="text-purple-400">return</span> <span class="text-green-400">"Let's code together!"</span>;
+  }
+};</pre>
+                </div>
+                <div class="code-terminal p-4 flex items-center">
+                    <div class="w-full">
+                        <p class="text-gray-400 mb-4">What we offer:</p>
+                        <ul class="space-y-2">
+                            <li class="flex items-center">
+                                <span class="text-green-400 mr-2">▹</span> Daily coding challenges
+                            </li>
+                            <li class="flex items-center">
+                                <span class="text-green-400 mr-2">▹</span> Project collaborations
+                            </li>
+                            <li class="flex items-center">
+                                <span class="text-green-400 mr-2">▹</span> Mentor sessions
+                            </li>
+                            <li class="flex items-center">
+                                <span class="text-green-400 mr-2">▹</span> Hackathons & events
+                            </li>
+                            <li class="flex items-center">
+                                <span class="text-green-400 mr-2">▹</span> Exclusive resources
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="mt-20 text-center text-gray-500 text-sm">
+            <div class="mb-4">
+                <span class="matrix-text">Connect with us:</span>
+                <div class="flex justify-center space-x-4 mt-2">
+                    <a href="#" class="hover:text-green-400 transition"><i class="fab fa-github"></i></a>
+                    <a href="#" class="hover:text-green-400 transition"><i class="fab fa-youtube"></i></a>
+                    <a href="https://whatsapp.com/channel/0029Vb65SHlCMY0G4xF0Te2I" class="hover:text-green-400 transition"><i class="fab fa-watsapp"></i></a>
+                    <a href="https://discord.gg/m3DCgBrH" class="hover:text-green-400 transition"><i class="fab fa-discord"></i></a>
+                </div>
+            </div>
+            <p>© 2025 CodeZone | Created by Brayan Dev</p>
+        </footer>
+    </div>
+
+<script>
+    const btn = document.querySelector("button.md\\:hidden");
+    const menu = document.getElementById("mobile-menu");
+    btn.addEventListener("click", () => {
+        menu.classList.toggle("hidden");
+    });
+   let deferredPrompt;
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault(); // Empêche Chrome d'afficher la bannière automatiquement
+    deferredPrompt = e;
+
+    // Crée le bouton "Installer CodeZone"
+    const installBtn = document.createElement('button');
+    installBtn.textContent = "Installer CodeZone";
+    installBtn.className = "fixed bottom-4 right-4 bg-indigo-600 text-white px-4 py-2 rounded shadow-lg hover:bg-indigo-700 z-50";
+    document.body.appendChild(installBtn);
+
+    installBtn.addEventListener('click', () => {
+      deferredPrompt.prompt(); // Affiche la bannière d'installation
+
+      deferredPrompt.userChoice.then((choiceResult) => {
+        if (choiceResult.outcome === 'accepted') {
+          console.log('L\'utilisateur a accepté l\'installation');
+        } else {
+          console.log('L\'utilisateur a refusé l\'installation');
+        }
+        installBtn.remove(); // Supprime le bouton après action
+      });
+    });
+  });
+</script>
+
+
+       
+
+   </body>
+</html>

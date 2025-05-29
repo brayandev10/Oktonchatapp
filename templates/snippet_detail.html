@@ -1,0 +1,547 @@
+{% load static %}
+{% load pwa %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ snippet.title }} – CodeSniper</title>
+  <link rel="manifest" href="{% static 'manifest.json' %}">
+{% progressive_web_app_meta %}
+  <title>CodeZone - Snippets Utiles Multilangages</title>
+  
+  <meta property="og:image" content="{{ request.build_absolute_uri }}{% static 'Icone/icone.png'%} ">
+  
+  <link rel="icon" type="image/png" href="{% static 'Icone/icone.png' %}">
+  <!-- Prism.js syntax highlighter -->
+<link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-markup.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-css.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              200: '#bae6fd',
+              300: '#7dd3fc',
+              400: '#38bdf8',
+              500: '#0ea5e9',
+              600: '#0284c7',
+              700: '#0369a1',
+              800: '#075985',
+              900: '#0c4a6e',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['Fira Code', 'monospace']
+          }
+        }
+      }
+    }
+    
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  
+   <style>
+.tab.active {
+  @apply border-b-4 border-primary-500 text-primary-700;
+}
+
+    pre { 
+      @apply p-6 bg-gray-100 rounded-lg overflow-x-auto text-sm font-mono leading-relaxed;
+      box-shadow: inset 0 2px 4px 0 rgba(0,0,0,0.05);
+    }
+    code {
+      @apply text-gray-800;
+    }
+    .snippet-meta div {
+      @apply flex items-center space-x-1.5 px-3 py-1.5 bg-gray-100 rounded-lg text-sm;
+    }
+    #likeCount.active {
+      @apply text-red-600;
+    }
+    .badge {
+      @apply px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap;
+    }
+    .badge-language {
+      @apply bg-primary-100 text-primary-800;
+    }
+    .badge-difficulty-beginner {
+      @apply bg-green-100 text-green-800;
+    }
+    .badge-difficulty-intermediate {
+      @apply bg-yellow-100 text-yellow-800;
+    }
+    .badge-difficulty-advanced {
+      @apply bg-red-100 text-red-800;
+    }
+  </style>
+</head>
+<body class="bg-gray-50 font-sans antialiased min-h-screen flex flex-col">
+
+<!-- Navigation -->
+<nav class="bg-primary-700 text-white shadow-sm sticky top-0 z-50">
+  <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+    <div class="flex items-center space-x-3">
+      <i class="fas fa-code text-xl"></i>
+      <a href="{% url 'list' %}" class="text-lg font-semibold tracking-tight hover:text-white">CodeSniper</a>
+    </div>
+    <div class="hidden md:flex items-center space-x-6">
+      <a href="{% url 'list' %}" class="text-white/90 hover:text-white transition-colors">Accueil</a>
+      <a href="{% url 'create' %}" class="text-white/90 hover:text-white transition-colors">Créer</a>
+      {% if user.is_authenticated %}
+        <a href="{% url 'logout' %}" class="bg-white text-primary-700 px-4 py-2 rounded-lg font-medium hover:bg-primary-50 transition-colors">
+          <i class="fas fa-sign-out-alt mr-2"></i>Déconnexion
+        </a>
+      {% else %}
+        <a href="{% url 'login' %}" class="bg-white text-primary-700 px-4 py-2 rounded-lg font-medium hover:bg-primary-50 transition-colors">
+          <i class="fas fa-user mr-2"></i>Connexion
+        </a>
+      {% endif %}
+    </div>
+    <button class="md:hidden text-xl">
+      <i class="fas fa-bars"></i>
+    </button>
+  </div>
+</nav>
+
+<!-- Contenu -->
+<main class="flex-grow container mx-auto px-4 py-8 max-w-5xl">
+  <!-- En-tête -->
+  <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-8">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+      <h1 class="text-3xl font-bold text-gray-900 tracking-tight">{{ snippet.title }}</h1>
+      <div class="flex items-center space-x-2">
+        <button id="likeBtn"
+        data-slug="{{ snippet.slug }}"
+        class="px-3 py-1.5 bg-primary-50 text-primary-700 rounded-lg font-medium flex items-center space-x-1.5 hover:bg-primary-100 transition-colors">
+  <i class="fas fa-heart"></i>
+  <span id="likeCount">{{ snippet.likes }}</span>
+</button>
+        {% if user == snippet.author %}
+        <button data-slug="{{ snippet.slug }}" class="edit-btn px-3 py-1.5 bg-gray-50 text-gray-700 rounded-lg font-medium flex items-center space-x-1.5 hover:bg-gray-100 transition-colors">
+  <i class="fas fa-edit"></i>
+  <span>Modifier</span>
+</button>
+       <button data-slug="{{ snippet.slug }}" 
+        class="delete-btn text-red-600 hover:text-red-800 flex items-center space-x-1">
+  <i class="fas fa-trash"></i>
+  <span>Supprimer</span>
+</button>
+        {% endif %}
+      </div>
+    </div>
+    
+    <p class="text-gray-600 mb-6">{{ snippet.description }}</p>
+    
+    <div class="flex flex-wrap items-center gap-2 snippet-meta">
+      <div>
+        <i class="fas fa-user text-gray-500"></i>
+        <span>{{ snippet.author.username }}</span>
+      </div>
+      <div>
+        <i class="far fa-calendar-alt text-gray-500"></i>
+        <span>{{ snippet.created_at|date:"d M Y" }}</span>
+      </div>
+      <div class="badge badge-language">
+                <span>{{ snippet.get_language_display }}</span>
+      </div>
+      <div class="badge badge-difficulty-{{ snippet.difficulty|lower }}">
+        <i class="fas fa-signal"></i>
+        <span>{{ snippet.get_difficulty_display }}</span>
+      </div>
+      <div>
+        <i class="fas fa-eye text-gray-500"></i>
+        <span>{{ snippet.views }} vues</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal d'édition -->
+  <div id="editModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+    <div class="bg-white w-full max-w-3xl rounded-xl shadow-lg p-6 relative max-h-[90vh] overflow-y-auto">
+      <button id="closeEdit" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700 p-1">
+        <i class="fas fa-times text-xl"></i>
+      </button>
+
+      <h2 class="text-2xl font-bold mb-6 text-gray-900">Modifier le snippet</h2>
+      <form id="editForm" class="space-y-5">
+        {% csrf_token %}
+        <input type="hidden" name="slug" id="editSlug">
+        
+        <div>
+          <label for="editTitle" class="block text-sm font-medium text-gray-700 mb-1">Titre</label>
+          <input type="text" name="title" id="editTitle" class="w-full border border-gray-200 rounded-lg px-4 py-2 focus:ring-1 focus:ring-primary-500 focus:border-primary-500" required>
+        </div>
+        
+        <div>
+          <label for="editDesc" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+          <textarea name="description" id="editDesc" rows="2" class="w-full border border-gray-200 rounded-lg px-4 py-2 focus:ring-1 focus:ring-primary-500 focus:border-primary-500" required></textarea>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-2">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Langage</label>
+            <div class="space-y-2">
+              <label class="flex items-center space-x-2">
+                <input type="radio" name="language" value="html" class="text-primary-500">
+                <span>HTML</span>
+              </label>
+              <label class="flex items-center space-x-2">
+                <input type="radio" name="language" value="css" class="text-primary-500">
+                <span>CSS</span>
+              </label>
+              <label class="flex items-center space-x-2">
+                <input type="radio" name="language" value="js" class="text-primary-500">
+                <span>JavaScript</span>
+              </label>
+            </div>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Difficulté</label>
+            <div class="space-y-2">
+              <label class="flex items-center space-x-2">
+                <input type="radio" name="difficulty" value="hard" class="text-primary-500">
+                <span>Débutant</span>
+              </label>
+              <label class="flex items-center space-x-2">
+                <input type="radio" name="difficulty" value="medium" class="text-primary-500">
+                <span>Intermédiaire</span>
+              </label>
+              <label class="flex items-center space-x-2">
+                <input type="radio" name="difficulty" value="easy" class="text-primary-500">
+                <span>Avancé</span>
+              </label>
+            </div>
+          </div>
+        </div>
+        
+        <div>
+          <label for="editHtml" class="block text-sm font-medium text-gray-700 mb-1">HTML</label>
+          <textarea name="html_code" id="editHtml" rows="6" class="w-full border border-gray-200 rounded-lg px-4 py-2 font-mono text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"></textarea>
+        </div>
+        
+        <div>
+          <label for="editCss" class="block text-sm font-medium text-gray-700 mb-1">CSS</label>
+          <textarea name="css_code" id="editCss" rows="6" class="w-full border border-gray-200 rounded-lg px-4 py-2 font-mono text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"></textarea>
+        </div>
+        
+        <div>
+          <label for="editJs" class="block text-sm font-medium text-gray-700 mb-1">JavaScript</label>
+          <textarea name="js_code" id="editJs" rows="6" class="w-full border border-gray-200 rounded-lg px-4 py-2 font-mono text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"></textarea>
+        </div>
+
+        <div class="flex justify-end">
+          <button type="submit" class="bg-primary-600 text-white px-5 py-2.5 rounded-lg font-medium hover:bg-primary-700 transition-colors">
+            Enregistrer les modifications
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Onglets Code -->
+
+<div class="border-b flex" id="codeTabs">
+  <button class="tab px-8 py-4 text-lg font-semibold active" data-target="htmlTab">
+    <i class="fab fa-html5 text-orange-500"></i><span>HTML</span>
+  </button>
+  <button class="tab px-8 py-4 text-lg font-semibold" data-target="cssTab">
+    <i class="fab fa-css3-alt text-blue-500"></i><span>CSS</span>
+  </button>
+  {% if snippet.js_code %}
+  <button class="tab px-8 py-4 text-lg font-semibold" data-target="jsTab">
+    <i class="fab fa-js text-yellow-500"></i><span>JavaScript</span>
+  </button>
+  {% endif %}
+</div>
+
+<!-- Contenu des onglets -->
+<!-- HTML -->
+<div id="htmlTab" class="tab-panel p-6 relative">
+  <div class="flex justify-end mb-2 gap-2">
+    <button onclick="copyCode('htmlCode')" class="text-gray-500 hover:text-gray-700"><i class="fas fa-copy"></i></button>
+    <button onclick="shareCode('htmlCode')" class="text-gray-500 hover:text-gray-700"><i class="fas fa-share-alt"></i></button>
+  </div>
+  <pre class="overflow-x-auto rounded-md bg-gray-900 text-white"><code id="htmlCode" class="language-markup">{{ snippet.html_code|escape }}</code></pre>
+</div>
+
+<!-- CSS -->
+<div id="cssTab" class="tab-panel p-6 hidden relative">
+  <div class="flex justify-end mb-2 gap-2">
+    <button onclick="copyCode('cssCode')" class="text-gray-500 hover:text-gray-700"><i class="fas fa-copy"></i></button>
+    <button onclick="shareCode('cssCode')" class="text-gray-500 hover:text-gray-700"><i class="fas fa-share-alt"></i></button>
+  </div>
+  <pre class="overflow-x-auto rounded-md bg-gray-900 text-white"><code id="cssCode" class="language-css">{{ snippet.css_code|escape }}</code></pre>
+</div>
+
+<!-- JS -->
+{% if snippet.js_code %}
+<div id="jsTab" class="tab-panel p-6 hidden relative">
+  <div class="flex justify-end mb-2 gap-2">
+    <button onclick="copyCode('jsCode')" class="text-gray-500 hover:text-gray-700"><i class="fas fa-copy"></i></button>
+    <button onclick="shareCode('jsCode')" class="text-gray-500 hover:text-gray-700"><i class="fas fa-share-alt"></i></button>
+  </div>
+  <pre class="overflow-x-auto rounded-md bg-gray-900 text-white"><code id="jsCode" class="language-javascript">{{ snippet.js_code|escape }}</code></pre>
+</div>
+{% endif %}
+  <!-- Aperçu rendu -->
+  <!-- Aperçu rendu -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+  <div class="border-b border-gray-200 px-5 py-3">
+    <h2 class="text-lg font-semibold text-gray-900 flex items-center space-x-2">
+      <i class="fas fa-eye text-gray-500"></i>
+      <span>Aperçu</span>
+    </h2>
+  </div>
+
+  <iframe id="preview-frame" class="w-full min-h-[400px] bg-white"></iframe>
+
+  <!-- Console -->
+  <div class="bg-black text-white text-sm p-3 font-mono" id="console-output">
+    Console :
+  </div>
+</div>
+
+<script>
+  const iframe = document.getElementById('preview-frame');
+  const consoleOutput = document.getElementById('console-output');
+
+  const htmlCode = `{{ snippet.html_code|escapejs }}`;
+  const cssCode = `<style>{{ snippet.css_code|escapejs }}</style>`;
+  const jsCode = `
+    <script>
+      (function() {
+        const oldLog = console.log;
+        const oldError = console.error;
+        console.log = function(...args) {
+          window.parent.postMessage({ type: 'log', message: args.join(' ') }, '*');
+          oldLog.apply(console, args);
+        };
+        console.error = function(...args) {
+          window.parent.postMessage({ type: 'error', message: args.join(' ') }, '*');
+          oldError.apply(console, args);
+        };
+        window.onerror = function(msg, url, line, col, error) {
+          window.parent.postMessage({ type: 'error', message: msg + ' at line ' + line }, '*');
+        };
+        {{ snippet.js_code|escapejs }}
+      })();
+    <\/script>`;
+
+  const iframeContent = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        ${cssCode}
+      </head>
+      <body>
+        ${htmlCode}
+        ${jsCode}
+      </body>
+    </html>`;
+
+  iframe.srcdoc = iframeContent;
+
+  window.addEventListener('message', (e) => {
+    if (e.data.type === 'log' || e.data.type === 'error') {
+      const color = e.data.type === 'error' ? 'text-red-400' : 'text-green-400';
+      consoleOutput.innerHTML += `<div class="${color}">${e.data.message}</div>`;
+    }
+  });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.querySelectorAll(".delete-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const slug = btn.dataset.slug;
+    Swal.fire({
+      title: "Supprimer ce snippet ?",
+      text: "Cette action est irréversible.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#e3342f",
+      cancelButtonColor: "#6c757d",
+      confirmButtonText: "Oui, supprimer"
+    }).then(result => {
+      if (result.isConfirmed) {
+        fetch(`/${slug}/ajax-delete/`, {
+          method: "POST",
+          headers: {
+            "X-CSRFToken": "{{ csrf_token }}",
+            "X-Requested-With": "XMLHttpRequest"
+          }
+        }).then(r => r.json()).then(data => {
+          if (data.status === "ok") {
+            Swal.fire({
+              toast: true,
+              icon: "success",
+              title: "Snippet supprimé",
+              position: "top-end",
+              timer: 2000,
+              showConfirmButton: false
+            });
+            window.location.href = "{% url 'list' %}";
+          }
+        });
+      }
+    });
+  });
+});
+
+
+document.addEventListener("DOMContentLoaded", () => {
+  const likeBtn = document.getElementById("likeBtn");
+
+  if (likeBtn) {
+    likeBtn.addEventListener("click", () => {
+      const slug = likeBtn.dataset.slug;
+
+      fetch(`/${slug}/like/`, {
+        method: "POST",
+        headers: {
+          "X-CSRFToken": "{{ csrf_token }}",
+          "X-Requested-With": "XMLHttpRequest"
+        }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === "ok") {
+          const countSpan = document.getElementById("likeCount");
+          countSpan.textContent = data.likes;
+          likeBtn.classList.add("bg-primary-100");
+        }
+      });
+    });
+  }
+});
+
+</script>
+        <script>
+document.addEventListener("DOMContentLoaded", () => {
+  const editBtns = document.querySelectorAll(".edit-btn");
+  const modal = document.getElementById("editModal");
+  const closeBtn = document.getElementById("closeEdit");
+
+  // Clic sur bouton "Modifier"
+  editBtns.forEach(btn => {
+    btn.addEventListener("click", () => {
+      const title = document.querySelector("h1").textContent.trim();
+      const desc = document.querySelector("p.text-gray-600").textContent.trim();
+
+      // Remplissage des champs
+      document.getElementById("editSlug").value = btn.dataset.slug;
+      document.getElementById("editTitle").value = title;
+      document.getElementById("editDesc").value = desc;
+
+      // Optionnel : charger le code depuis les <pre><code>
+      document.getElementById("editHtml").value = document.querySelector("#htmlTab code").textContent;
+      document.getElementById("editCss").value = document.querySelector("#cssTab code").textContent;
+      {% if snippet.js_code %}
+      document.getElementById("editJs").value = document.querySelector("#jsTab code").textContent;
+      {% endif %}
+
+      // Affiche la modale
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+    });
+  });
+
+  // Fermer la modale
+  closeBtn.addEventListener("click", () => {
+    modal.classList.remove("flex");
+    modal.classList.add("hidden");
+  });
+});
+
+
+// Soumission du formulaire de modification
+  const editForm = document.getElementById("editForm");
+
+  editForm.addEventListener("submit", function (e) {
+    e.preventDefault(); // Empêche l'envoi classique
+
+    const formData = new FormData(editForm);
+    const slug = document.getElementById("editSlug").value;
+
+    fetch(`/snippet/${slug}/ajax-update/`, {
+      method: "POST",
+      headers: {
+        "X-CSRFToken": editForm.querySelector("[name=csrfmiddlewaretoken]").value
+      },
+      body: formData
+    })
+    .then(response => {
+      if (!response.ok) throw new Error("Échec de la mise à jour");
+      return response.json();
+    })
+    .then(data => {
+      if (data.success) {
+        alert("Modifications enregistrées !");
+        location.reload();
+      } else {
+        alert("Erreur : " + (data.error || "inconnue"));
+      }
+    })
+    .catch(error => {
+      console.error("Erreur AJAX:", error);
+      alert("Erreur lors de la sauvegarde.");
+    });
+  });
+  
+  
+document.addEventListener("DOMContentLoaded", () => {
+  const tabs = document.querySelectorAll(".tab");
+  const panels = document.querySelectorAll(".tab-panel");
+
+  tabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+      const target = tab.dataset.target;
+
+      // Désactiver tous les onglets et masquer tous les panneaux
+      tabs.forEach(t => t.classList.remove("active"));
+      panels.forEach(p => p.classList.add("hidden"));
+
+      // Activer l'onglet cliqué et afficher son panneau
+      tab.classList.add("active");
+      document.getElementById(target).classList.remove("hidden");
+    });
+  });
+
+  // Activer le premier onglet au chargement
+  if (tabs.length) tabs[0].click();
+});
+
+function copyCode(id) {
+  const code = document.getElementById(id).innerText;
+  navigator.clipboard.writeText(code).then(() => {
+    alert("Code copié !");
+  });
+}
+
+function shareCode(id) {
+  const code = document.getElementById(id).innerText;
+  const blob = new Blob([code], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${id}.txt`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+</script>
+ </body>
+ </html>

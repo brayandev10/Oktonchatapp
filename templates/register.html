@@ -1,14 +1,17 @@
 {% load static %}
+{% load pwa %}
 <!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Inscription - CodeZone</titre >
-  <meta property="og:image" content="{{ request.build_absolute_uri }}{% static 'ton_app/file_00000000e6dc61f892653be5b6256447_conversation_id=6820d600-fb80-8010-bcad-e76a3e1dab1b%26message_id=123703f2-52e9-4850-9d3d-64bcf00a2dd4.png' %}">
-  <meta property="og:image" content="{{ request.build_absolute_uri }}{% static 'ton_app/file_00000000e6dc61f892653be5b6256447_conversation_id=6820d600-fb80-8010-bcad-e76a3e1dab1b%26message_id=123703f2-52e9-4850-9d3d-64bcf00a2dd4.png' %}">
+  <title>Inscription - CodeZone</title>
+  <meta property="og:image" content="{{ request.build_absolute_uri }}{% static 'Icone/icone.png' %}">
+  <link rel="manifest" href="{% static 'manifest.json' %}">
+{% progressive_web_app_meta %}
+ 
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="icon" type="image/png" href="{% static 'Icone/file_00000000e6dc61f892653be5b6256447_conversation_id=6820d600-fb80-8010-bcad-e76a3e1dab1b&message_id=123703f2-52e9-4850-9d3d-64bcf00a2dd4.png' %}">
+  <link rel="icon" type="image/png" href="{% static 'Icone/icone.png' %}">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body class="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-500 to-indigo-600 font-['Poppins'] p-4">
@@ -31,6 +34,11 @@
         <label class="block text-sm text-gray-700">Nom d'utilisateur</label>
         <input type="text" name="username" class="w-full border border-gray-300 rounded-lg px-4 py-3 mt-1 focus:outline-none focus:ring-2 focus:ring-purple-400" required>
       </div>
+      
+      <div>
+        <label class="block text-sm text-gray-700">email</label>
+        <input type="email" name="email" class="w-full border border-gray-300 rounded-lg px-4 py-3 mt-1 focus:outline-none focus:ring-2 focus:ring-purple-400" required>
+      </div>
 
       <div>
         <label class="block text-sm text-gray-700">Mot de passe</label>
@@ -46,6 +54,10 @@
       <button type="submit" class="w-full bg-purple-500 text-white font-semibold py-3 rounded-lg hover:bg-purple-600 transition">
         S'inscrire
       </button>
+        <a href="{% url 'social:begin' 'google-oauth2' %}" class="w-full flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 font-medium py-3 rounded-lg hover:bg-gray-50 transition shadow-sm">
+        <img src="https://www.google.com/favicon.ico" alt="Google" class="w-5 h-5">
+        <span>Continuer avec Google</span>
+      </a>
     </form>
 
     <p class="text-center text-sm text-gray-500">Déjà inscrit ? <a href="{% url 'login' %}" class="text-purple-600 hover:underline">Se connecter</a></p>
@@ -71,6 +83,34 @@
         element.classList.add('text-red-500');
       }
     }
+  });
+</script>
+
+<script>
+  let deferredPrompt;
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault(); // Empêche Chrome d'afficher la bannière automatiquement
+    deferredPrompt = e;
+
+    // Crée le bouton "Installer CodeZone"
+    const installBtn = document.createElement('button');
+    installBtn.textContent = "Installer CodeZone";
+    installBtn.className = "fixed bottom-4 right-4 bg-indigo-600 text-white px-4 py-2 rounded shadow-lg hover:bg-indigo-700 z-50";
+    document.body.appendChild(installBtn);
+
+    installBtn.addEventListener('click', () => {
+      deferredPrompt.prompt(); // Affiche la bannière d'installation
+
+      deferredPrompt.userChoice.then((choiceResult) => {
+        if (choiceResult.outcome === 'accepted') {
+          console.log('L\'utilisateur a accepté l\'installation');
+        } else {
+          console.log('L\'utilisateur a refusé l\'installation');
+        }
+        installBtn.remove(); // Supprime le bouton après action
+      });
+    });
   });
 </script>
 </body>

@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>codeZone chat</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <meta property="og:image" content="{{ request.build_absolute_uri }}{% static 'Icone/icone.png' %}">
+  <link rel="manifest" href="{% static 'manifest.json' %}">
+  {% progressive_web_app_meta %}
+  <link rel="icon" type="image/png" href="{% static 'Icone/icone.png' %}">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #eef2f6 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    
+    .chat-app {
+      width: 100%;
+      max-width: 480px;
+      height: 90vh;
+      display: flex;
+      flex-direction: column;
+      border-radius: 14px;
+      overflow: hidden;
+      background: #fff;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      padding: 16px;
+      position: relative;
+      z-index: 10;
+    }
+    
+    .header::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 0;
+      right: 0;
+      height: 20px;
+      background: linear-gradient(to bottom, rgba(59, 130, 246, 0.5), transparent);
+      z-index: -1;
+    }
+    
+    .header img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      margin-right: 12px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      object-fit: cover;
+    }
+    
+    .header h2 {
+      font-size: 16px;
+      margin: 0;
+      font-weight: 600;
+    }
+    
+    .header .controls {
+      margin-left: auto;
+      display: flex;
+      gap: 8px;
+    }
+    
+    .header .controls button {
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      color: #fff;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .header .controls button:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: translateY(-1px);
+    }
+    
+    .chat-window {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column-reverse;
+      background: #f9fafb;
+      background-image: radial-gradient(circle at 1px 1px, rgba(0, 0, 0, 0.05) 1px, transparent 0);
+      background-size: 15px 15px;
+    }
+    
+    .message {
+      max-width: 80%;
+      padding: 12px 16px;
+      border-radius: 16px;
+      margin: 6px 0;
+      word-wrap: break-word;
+      position: relative;
+      transition: all 0.2s ease;
+      animation: fadeIn 0.3s ease-out;
+      line-height: 1.4;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .message.sent {
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      color: #fff;
+      margin-left: auto;
+      border-bottom-right-radius: 4px;
+    }
+    
+    .message.received {
+      background: #fff;
+      color: #1f2937;
+      margin-right: auto;
+      border-bottom-left-radius: 4px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+    
+    .message img,
+    .message video {
+      max-width: 100%;
+      border-radius: 12px;
+      margin-top: 6px;
+    }
+    
+    .message audio {
+      width: 100%;
+      margin-top: 6px;
+    }
+    
+    .message small {
+      display: block;
+      font-size: 12px;
+      opacity: 0.8;
+      margin-top: 4px;
+      text-align: right;
+    }
+    
+    .media-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 8px;
+    }
+    
+    .media-actions button {
+      background: none;
+      border: none;
+      color: #fff;
+      cursor: pointer;
+      font-size: 16px;
+      opacity: 0.8;
+      transition: all 0.2s ease;
+    }
+    
+    .media-actions button:hover {
+      opacity: 1;
+      transform: scale(1.1);
+    }
+    
+    .received .media-actions button {
+      color: #3b82f6;
+    }
+    
+    .input-area {
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      border-top: 1px solid #e5e7eb;
+      background: #fff;
+    }
+    
+    .input-area input {
+      flex: 1;
+      padding: 12px 16px;
+      border: 1px solid #e5e7eb;
+      border-radius: 24px;
+      margin-right: 12px;
+      font-size: 14px;
+      transition: all 0.2s ease;
+      background: #f9fafb;
+    }
+    
+    .input-area input:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+    
+    .input-area button {
+      background: #3b82f6;
+      color: #fff;
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+    
+    .input-area button:hover {
+      background: #2563eb;
+      transform: translateY(-1px);
+    }
+    
+    #fileBtn {
+      margin-right: 8px;
+      background: transparent !important;
+      color: #6b7280 !important;
+      font-size: 20px;
+    }
+    
+    #fileBtn:hover {
+      color: #3b82f6 !important;
+      background: transparent !important;
+      transform: none;
+    }
+    
+    .file-preview div {
+      background: #f3f4f6;
+      padding: 12px;
+      border-radius: 12px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      animation: fadeIn 0.3s ease-out;
+    }
+    
+    .file-preview div textarea {
+      width: 100%;
+      margin-top: 8px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 8px;
+      font-size: 14px;
+      transition: all 0.2s ease;
+    }
+    
+    .file-preview div textarea:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    .file-input {
+      display: none;
+    }
+    
+    .date-label {
+      text-align: center;
+      margin: 16px 0;
+      font-size: 12px;
+      font-weight: 500;
+      color: #6b7280;
+      position: relative;
+    }
+    
+    .date-label::before,
+    .date-label::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      width: 30%;
+      height: 1px;
+      background: #e5e7eb;
+    }
+    
+    .date-label::before {
+      left: 0;
+    }
+    
+    .date-label::after {
+      right: 0;
+    }
+    
+    /* Scrollbar styling */
+    .chat-window::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    .chat-window::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    
+    .chat-window::-webkit-scrollbar-thumb {
+      background-color: rgba(0, 0, 0, 0.2);
+      border-radius: 3px;
+    }
+    
+    /* Pulse animation for new messages */
+    .new-message {
+      animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+      70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+    }
+    
+    /* Typing indicator */
+    .typing-indicator {
+      display: flex;
+      padding: 8px 16px;
+      background: #fff;
+      border-radius: 16px;
+      width: fit-content;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+    
+    .typing-dot {
+      width: 6px;
+      height: 6px;
+      background: #6b7280;
+      border-radius: 50%;
+      margin: 0 2px;
+      animation: typingAnimation 1.4s infinite ease-in-out;
+    }
+    
+    .typing-dot:nth-child(1) {
+      animation-delay: 0s;
+    }
+    
+    .typing-dot:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+    
+    .typing-dot:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+    
+    @keyframes typingAnimation {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-4px); }
+    }
+  </style>
+</head>
+<body>
+  <div class="chat-app">
+    <!-- Header -->
+    <div class="header">
+      <img src="https://ui-avatars.com/api/?name={{other_user.username}}&background=random" alt="Profile">
+      <h2>{{other_user.username }}</h2>
+      <div class="controls">
+        <button title="Appel audio"><i class="fas fa-phone"></i></button>
+        <button title="Appel vidéo"><i class="fas fa-video"></i></button>
+      </div>
+    </div>
+    
+    <!-- Chat Window -->
+    <div class="chat-window" id="chatWindow"></div>
+    
+    <!-- Input Area -->
+    <div class="input-area">
+      <button id="fileBtn" title="Attacher un fichier"><i class="fas fa-paperclip"></i></button>
+      <input type="text" id="messageInput" placeholder="Tapez un message...">
+      <input type="file" id="fileInput" class="file-input" multiple>
+      <button id="sendBtn" title="Envoyer"><i class="fas fa-paper-plane"></i></button>
+    </div>
+    
+    <!-- File Preview -->
+    <div class="file-preview" id="filePreview"></div>
+  </div>
+  
+  <audio id="notify-sound" src="{% static 'sounds/notification.mp3' %}" preload="auto"></audio>
+  
+  <script>
+    const chatWindow = document.getElementById("chatWindow");
+    const messageInput = document.getElementById("messageInput");
+    const sendBtn = document.getElementById("sendBtn");
+    const fileInput = document.getElementById("fileInput");
+    const fileBtn = document.getElementById("fileBtn");
+    const filePreview = document.getElementById("filePreview");
+    const CHAT_ID = "{{ chat.id }}";
+    const notifySound = document.getElementById("notify-sound");
+
+    const getFileIcon = (type) => {
+      if (type.startsWith("image")) return "🖼️";
+      if (type.startsWith("video")) return "🎥";
+      if (type.startsWith("audio")) return "🎵";
+      if (type.endsWith("pdf")) return "📄";
+      return "📁";
+    };
+
+    function addMessage(content, type = "received") {
+      const messageDiv = document.createElement("div");
+      messageDiv.classList.add("message", type);
+      messageDiv.innerHTML = content;
+      
+      // Add animation for new messages
+      messageDiv.classList.add("new-message");
+      setTimeout(() => {
+        messageDiv.classList.remove("new-message");
+      }, 1500);
+      
+      chatWindow.prepend(messageDiv);
+      scrollToBottom();
+    }
+
+    function scrollToBottom() {
+      // Small delay to ensure DOM is updated
+      setTimeout(() => {
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+      }, 10);
+    }
+
+    // Send message function
+    sendBtn.addEventListener("click", () => {
+      const message = messageInput.value.trim();
+      const files = Array.from(fileInput.files);
+
+      const formData = new FormData();
+      formData.append("chat_id", "{{ chat.id }}");
+      formData.append("csrfmiddlewaretoken", "{{ csrf_token }}");
+
+      if (message) {
+        formData.append("content", message);
+      }
+
+      if (files.length > 0) {
+        formData.append("file", files[0]);
+        const description = filePreview.querySelector("textarea")?.value || "";
+        formData.append("file_description", description);
+      }
+
+      fetch("{% url 'send_private_message' %}", {
+        method: "POST",
+        body: formData
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.file_url) {
+            let content = "";
+            if (data.file_type.startsWith("image")) {
+              content = `<img src="${data.file_url}"><p>${data.file_description}</p>`;
+            } else if (data.file_type.startsWith("video")) {
+              content = `<video controls src="${data.file_url}"></video><p>${data.file_description}</p>`;
+            } else if (data.file_type.startsWith("audio")) {
+              content = `<audio controls src="${data.file_url}"></audio><p>${data.file_description}</p>`;
+            } else {
+              content = `<a href="${data.file_url}" download>${data.file_url.split('/').pop()}</a><p>${data.file_description}</p>`;
+            }
+            addMessage(content, "sent");
+          }
+          if (data.content) {
+            addMessage(data.content, "sent");
+          }
+
+          messageInput.value = "";
+          fileInput.value = "";
+          filePreview.innerHTML = "";
+        });
+    });
+
+    // Render message with improved styling
+    function renderMessage(msg) {
+      const container = document.createElement("div");
+      container.classList.add("message", msg.is_self ? "sent" : "received");
+
+      let content = "";
+
+      if (msg.file_url) {
+        if (msg.file_type.startsWith("image")) {
+          content += `<img src="${msg.file_url}">`;
+        } else if (msg.file_type.startsWith("video")) {
+          content += `<video controls src="${msg.file_url}"></video>`;
+        } else if (msg.file_type.startsWith("audio")) {
+          content += `<audio controls src="${msg.file_url}"></audio>`;
+        } else {
+          content += `<a href="${msg.file_url}" download>${getFileIcon(msg.file_type)} ${msg.file_url.split('/').pop()}</a>`;
+        }
+
+        content += `
+          <div class="media-actions">
+            <button title="Télécharger" onclick="downloadFile('${msg.file_url}')"><i class="fas fa-download"></i></button>
+            <button title="Partager" onclick="shareFile('${msg.file_url}', '${msg.file_description}')"><i class="fas fa-share"></i></button>
+          </div>
+          ${msg.file_description ? `<p>${msg.file_description}</p>` : ''}
+        `;
+      }
+
+      if (msg.content) {
+        content += `<p>${msg.content}</p>`;
+      }
+
+      content += `<small>${msg.timestamp}</small>`;
+      container.innerHTML = content;
+      return container;
+    }
+
+    function downloadFile(url) {
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = url;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    async function shareFile(fileName, description) {
+      if (navigator.share) {
+        try {
+          await navigator.share({ 
+            title: "Fichier partagé", 
+            text: description || "Fichier partagé via codeZone", 
+            url: fileName 
+          });
+        } catch (err) {
+          console.error("Erreur lors du partage :", err);
+        }
+      } else {
+        alert("Le partage est indisponible sur ce navigateur. Vous pouvez copier ce lien : " + fileName);
+      }
+    }
+
+    // File attachment handling
+    fileBtn.addEventListener("click", () => fileInput.click());
+
+    fileInput.addEventListener("change", (e) => {
+      const files = Array.from(e.target.files);
+      filePreview.innerHTML = "";
+      
+      if (files.length > 0) {
+        files.forEach((file) => {
+          const fileDiv = document.createElement("div");
+          fileDiv.innerHTML = `
+            <span class="flex items-center gap-2">
+              ${getFileIcon(file.type)} 
+              <span class="truncate">${file.name}</span>
+              <span class="text-xs opacity-70">(${(file.size / 1024).toFixed(1)} KB)</span>
+            </span>
+            <button onclick="removeFile(this)" title="Supprimer" class="text-red-500 hover:text-red-700">
+              <i class="fas fa-times"></i>
+            </button>
+            <textarea placeholder="Ajouter une description..."></textarea>
+          `;
+          filePreview.appendChild(fileDiv);
+        });
+      }
+    });
+
+    function removeFile(btn) {
+      btn.closest('div').remove();
+      if (filePreview.children.length === 0) {
+        fileInput.value = "";
+      }
+    }
+
+    // Load messages with date grouping
+    let lastMessageCount = 0;
+    
+    function loadMessages() {
+      fetch(`/get-chat-messages/${CHAT_ID}/`)
+        .then(response => response.json())
+        .then(data => {
+          const messages = data.messages;
+
+          if (messages.length > lastMessageCount && lastMessageCount > 0) {
+            const newMsg = messages[messages.length - 1];
+            if (!newMsg.is_self) {
+              notifySound.currentTime = 0;
+              notifySound.play();
+            }
+          }
+
+          chatWindow.innerHTML = '';
+          let lastDate = '';
+          
+          messages.forEach(msg => {
+            const msgDate = msg.full_date;
+            if (msgDate !== lastDate) {
+              const dateLabel = document.createElement("div");
+              dateLabel.classList.add("date-label");
+              dateLabel.innerText = msgDate;
+              chatWindow.appendChild(dateLabel);
+              lastDate = msgDate;
+            }
+
+            const msgNode = renderMessage(msg);
+            chatWindow.appendChild(msgNode);
+          });
+
+          lastMessageCount = messages.length;
+          scrollToBottom();
+        });
+    }
+    
+    // Initial load
+    loadMessages();
+    
+    // Auto-refresh every 5 seconds
+    setInterval(loadMessages, 5000);
+    
+    // Handle enter key press
+    messageInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        sendBtn.click();
+      }
+    });
+  </script>
+<p style="border-radius: 8px; text-align: center; font-size: 12px; color: #fff; margin-top: 16px;position: fixed; left: 8px; bottom: 8px; z-index: 10; background: rgba(0, 0, 0, 0.8); padding: 4px 8px;">Made with <img src="https://enzostvs-deepsite.hf.space/logo.svg" alt="DeepSite Logo" style="width: 16px; height: 16px; vertical-align: middle;display:inline-block;margin-right:3px;filter:brightness(0) invert(1);"><a href="https://enzostvs-deepsite.hf.space" style="color: #fff;text-decoration: underline;" target="_blank" >DeepSite</a> - 🧬 <a href="https://enzostvs-deepsite.hf.space?remix=Brayandev13/chat-prive" style="color: #fff;text-decoration: underline;" target="_blank" >Remix</a></p></body>
+</html>

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Profil - {{ user.username }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:image" content="{{ request.build_absolute_uri }}{{ profile.profile_picture.url }} ">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: {
+              600: '#4f46e5',
+              700: '#4338ca',
+            },
+            secondary: {
+              600: '#10b981',
+              700: '#0d9488',
+            }
+          },
+          animation: {
+            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'bounce-slow': 'bounce 2s infinite',
+            'fade-in': 'fadeIn 0.5s ease-in-out',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0', transform: 'translateY(-10px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @keyframes gradient {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .gradient-text {
+      background: linear-gradient(90deg, #4f46e5, #10b981);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      background-size: 200% 200%;
+      animation: gradient 3s ease infinite;
+    }
+    .avatar-hover-effect:hover {
+      transform: translateY(-5px) rotate(5deg);
+      filter: drop-shadow(0 10px 8px rgba(79, 70, 229, 0.3));
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-gray-50 to-gray-200 min-h-screen flex items-center justify-center p-4">
+  <div class="bg-white shadow-xl rounded-2xl p-6 w-full max-w-md text-center relative overflow-hidden group transition-all duration-300 transform hover:shadow-2xl">
+    <!-- Decorative elements -->
+    <div class="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-primary-600/10 blur-xl"></div>
+    <div class="absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-secondary-600/10 blur-xl"></div>
+    
+    <!-- Avatar avec bouton caméra -->
+
+<div class="relative mx-auto mb-4 transition-all duration-300 avatar-hover-effect cursor-pointer" onclick="openProfileModal()">
+  {% with profile=user.userprofile %}
+    {% if profile.profile_picture %}
+      <img src="{{ profile.profile_picture.url }}" alt="Photo de profil" class="w-28 h-28 rounded-full object-cover shadow-lg mx-auto">
+    {% else %}
+      <div class="w-28 h-28 mx-auto bg-gradient-to-br from-primary-600 to-secondary-600 text-white rounded-full flex items-center justify-center text-4xl font-bold shadow-lg">
+        {{ user.username|slice:":2"|upper }}
+      </div>
+    {% endif %}
+  {% endwith %}
+  
+  <label for="profile-upload" class="absolute -bottom-1 -right-1 bg-primary-600 text-white rounded-full w-8 h-8 flex items-center justify-center border-2 border-white cursor-pointer">
+    <i class="fas fa-camera text-xs"></i>
+  </label>
+</div>
+
+<!-- Modale d'affichage -->
+<div id="profile-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden">
+  <div class="relative bg-white p-4 rounded-lg shadow-xl max-w-sm w-full">
+    <button onclick="closeProfileModal()" class="absolute top-2 right-2 text-gray-600 hover:text-black">&times;</button>
+    
+    {% if user.userprofile.profile_picture %}
+      <img id="modal-profile-image" src="{{ user.userprofile.profile_picture.url }}" alt="Photo de profil" class="w-full h-auto rounded-lg mb-4">
+      <a href="{{ user.userprofile.profile_picture.url }}" download class="flex items-center justify-center px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700">
+        <i class="fas fa-download mr-2"></i> Télécharger
+      </a>
+    {% else %}
+      <p class="text-center text-gray-600 mb-4">Aucune photo de profil disponible</p>
+    {% endif %}
+    
+  </div>
+</div>
+<!-- Input fichier caché -->
+<input id="profile-upload" type="file" accept="image/*" onchange="openCropModal(this)" class="hidden">
+
+<!-- Modale Cropper -->
+<div id="crop-modal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center">
+  <div class="bg-white p-4 rounded shadow-lg w-80">
+    <h2 class="text-lg font-semibold mb-2">Recadrer la photo</h2>
+    <div>
+      <img id="cropper-image" src="" class="max-h-64 w-full object-contain">
+    </div>
+    <div class="flex justify-end gap-2 mt-3">
+      <button onclick="cancelCrop()" class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Annuler</button>
+      <button onclick="submitCroppedImage()" class="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700">Valider</button>
+    </div>
+  </div>
+</div>
+
+    <!-- User info with subtle animation -->
+    <div class="animate-fade-in">
+      <h2 class="text-3xl font-bold text-gray-800 mb-1">{{ user.username }}</h2>
+      <p class="text-gray-500 mb-6">
+        Membre depuis <span class="font-medium gradient-text">{{ user.date_joined|date:"d F Y" }}</span>
+      </p>
+
+      <!-- Info cards -->
+      <div class="bg-gray-50 rounded-xl p-4 mb-6 border border-gray-200">
+        <div class="space-y-2 text-left">
+          <div class="flex items-center">
+            <i class="fas fa-envelope text-gray-400 mr-2"></i>
+            <p><span class="font-medium text-gray-500">Email :</span> {{ user.email|default:"Non fourni" }}</p>
+          </div>
+          <div class="flex items-center">
+            <i class="fas fa-id-card text-gray-400 mr-2"></i>
+            <p><span class="font-medium text-gray-500">ID :</span> {{ user.id }}</p>
+          </div>
+          <div class="flex items-start">
+            <i class="fas fa-link text-gray-400 mr-2 mt-1"></i>
+            <p><span class="font-medium text-gray-500">URL :</span> 
+              <span id="profile-url" class="text-primary-600 break-all inline-block">{{ request.build_absolute_uri }}</span>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action buttons with hover effects -->
+      <div class="space-y-3 mb-4">
+        <button onclick="copyProfileUrl()" 
+                class="w-full px-4 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-all duration-300 flex items-center justify-center group/btn">
+          <i class="fas fa-copy mr-2 transition-transform group-hover/btn:scale-110"></i>
+          <span class="group-hover/btn:translate-x-1 transition-transform">Copier l'URL</span>
+        </button>
+        
+        <button onclick="shareProfile()" 
+                class="w-full px-4 py-3 bg-secondary-600 text-white rounded-lg hover:bg-secondary-700 transition-all duration-300 flex items-center justify-center group/btn">
+          <i class="fas fa-share-alt mr-2 transition-transform group-hover/btn:scale-110"></i>
+          <span class="group-hover/btn:translate-x-1 transition-transform">Partager le profil</span>
+        </button>
+      </div>
+
+      <p id="copied-msg" class="text-green-500 text-sm flex items-center justify-center mb-1 opacity-0 transition-opacity duration-300">
+        <i class="fas fa-check-circle mr-1"></i> URL copiée dans le presse-papier !
+      </p>
+
+      <!-- Secondary actions -->
+      <div class="flex space-x-3 justify-center pt-4 border-t border-gray-100">
+        <a href="{% url 'private_chat' user.id %}" 
+           class="px-4 py-2 bg-blue-500/10 text-blue-600 rounded-lg hover:bg-blue-500/20 transition">
+          Message privé
+        </a>
+        <a href="{% url 'logout' %}" 
+           class="px-4 py-2 bg-red-500/10 text-red-600 rounded-lg hover:bg-red-500/20 transition">
+          Déconnexion
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+      
+      
+  function openProfileModal() {
+    document.getElementById("profile-modal").classList.remove("hidden");
+  }
+
+  function closeProfileModal() {
+    document.getElementById("profile-modal").classList.add("hidden");
+  }
+
+    function copyProfileUrl() {
+      const url = document.getElementById("profile-url").innerText;
+      navigator.clipboard.writeText(url).then(() => {
+        const msg = document.getElementById("copied-msg");
+        msg.classList.remove("opacity-0");
+        setTimeout(() => msg.classList.add("opacity-0"), 2000);
+      });
+    }
+
+    function shareProfile() {
+      const url = document.getElementById("profile-url").innerText;
+      if (navigator.share) {
+        navigator.share({
+          title: "Profil CodeZone",
+          text: `Voici le profil de {{ user.username }} sur CodeZone`,
+          url: url
+        }).catch(err => console.error("Erreur de partage :", err));
+      } else {
+        alert("Le partage n'est pas supporté sur ce navigateur.");
+      }
+    }
+    
+    
+   
+  let cropper;
+
+  function openCropModal(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      const image = document.getElementById('cropper-image');
+      image.src = e.target.result;
+
+      document.getElementById('crop-modal').classList.remove('hidden');
+
+      if (cropper) cropper.destroy();
+
+      cropper = new Cropper(image, {
+        aspectRatio: 1,
+        viewMode: 1,
+        dragMode: 'move',
+        background: false,
+        minContainerWidth: 300,
+        minContainerHeight: 300
+      });
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function cancelCrop() {
+    if (cropper) cropper.destroy();
+    document.getElementById('crop-modal').classList.add('hidden');
+  }
+
+  function submitCroppedImage() {
+    cropper.getCroppedCanvas({ width: 300, height: 300 }).toBlob(blob => {
+      const formData = new FormData();
+      formData.append('profile_picture', blob, 'profile.jpg');
+
+      fetch('{% url "update_profile_picture" %}', {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: formData
+      }).then(response => {
+        if (cropper) cropper.destroy();
+        document.getElementById('crop-modal').classList.add('hidden');
+
+        if (response.ok) {
+          location.reload();
+        } else {
+          alert("Erreur lors de l'envoi de la photo.");
+        }
+      });
+    }, 'image/jpeg');
+  }
+</script>
+  
+</body>
+</html>

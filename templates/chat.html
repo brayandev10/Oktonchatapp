@@ -1,0 +1,728 @@
+{% load static %}
+{% load pwa %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>codeZone chat -      {{ other_user.username }}</title>
+   {% if other_user.userprofile.profile_picture %}
+  <meta property="og:image" content="{{ request.build_absolute_uri|slice:":-1" }}{{ other_user.userprofile.profile_picture.url }}">
+  <link rel="icon" type="image/png" href="{{ other_user.userprofile.profile_picture.url }}">
+{% else %}
+  <meta property="og:image" content="https://ui-avatars.com/api/?name={{ other_user.username|urlencode }}&background=4f46e5&color=fff">
+  <link rel="icon" type="image/png" href="https://ui-avatars.com/api/?name={{ other_user.username|urlencode }}&background=4f46e5&color=fff">
+{% endif %}
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    @keyframes float {
+      0%, 100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-5px);
+      }
+    }
+    
+    .message {
+      opacity: 0;
+      animation: fadeInUp 0.4s forwards;
+      animation-delay: calc(var(--i) * 0.07s);
+    }
+    
+    .chat-window::-webkit-scrollbar {
+      width: 8px;
+    }
+    
+    .chat-window::-webkit-scrollbar-track {
+      background: rgba(241, 241, 241, 0.5);
+      border-radius: 10px;
+      backdrop-filter: blur(5px);
+    }
+    
+    .chat-window::-webkit-scrollbar-thumb {
+      background: linear-gradient(to bottom, #8b5cf6, #6366f1);
+      border-radius: 10px;
+      transition: all 0.3s ease;
+    }
+    
+    .chat-window::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(to bottom, #7c3aed, #4f46e5);
+    }
+    
+    .input-message {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+    
+    .input-message:focus {
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3), 
+                  inset 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+    
+    .typing-indicator span {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      background: linear-gradient(to bottom right, #6366f1, #8b5cf6);
+      border-radius: 50%;
+      margin: 0 3px;
+      animation: bounce 1.5s infinite ease-in-out;
+    }
+    
+    .typing-indicator span:nth-child(1) {
+      animation-delay: 0s;
+    }
+    
+    .typing-indicator span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+    
+    .typing-indicator span:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+    
+    @keyframes bounce {
+      0%, 60%, 100% {
+        transform: translateY(0);
+        opacity: 0.8;
+      }
+      30% {
+        transform: translateY(-10px);
+        opacity: 1;
+      }
+    }
+    
+    .message-container {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .message-container:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+    
+    .send-btn {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2), 
+                  0 2px 4px -1px rgba(79, 70, 229, 0.1);
+    }
+    
+    .send-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px -1px rgba(79, 70, 229, 0.25), 
+                  0 4px 6px -1px rgba(79, 70, 229, 0.15);
+    }
+    
+    .send-btn:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 4px -1px rgba(79, 70, 229, 0.15);
+    }
+    
+    .header-gradient {
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    }
+    
+    .chat-background {
+      background: linear-gradient(to bottom, 
+                  rgba(249, 250, 251, 0.95) 0%, 
+                  rgba(243, 244, 246, 0.95) 100%),
+                  url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%239ca3af' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E");
+    }
+    
+    .status-indicator {
+      box-shadow: 0 0 0 3px rgba(236, 253, 245, 0.7);
+    }
+    
+    .file-preview-item {
+      transition: all 0.3s ease;
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(5px);
+    }
+    
+    .file-preview-item:hover {
+      transform: translateY(-3px);
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+    }
+    
+    .date-divider::before {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(to right, transparent, rgba(156, 163, 175, 0.5), transparent);
+      z-index: 0;
+    }
+    
+    .tooltip {
+      position: relative;
+    }
+    
+    .tooltip::before {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 4px 8px;
+      background: rgba(31, 41, 55, 0.9);
+      color: white;
+      border-radius: 4px;
+      font-size: 12px;
+      white-space: nowrap;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.2s ease;
+      margin-bottom: 8px;
+    }
+    
+    .tooltip:hover::before {
+      opacity: 1;
+      visibility: visible;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-gray-50 to-gray-100 h-screen">
+  <div class="w-screen h-screen sm:w-full sm:h-auto sm:max-h-[90vh] overflow-hidden shadow-xl bg-white rounded-2xl flex flex-col">
+
+    <!-- Header -->
+    <div class="flex items-center p-4 header-gradient text-white">
+      <div class="relative">
+        {% if other_user.userprofile.profile_picture %}
+          <a href="{% url 'user_profile' other_user.id %}" class="text-lg font-semibold hover:underline transition-all duration-200">
+            <img src="{{ other_user.userprofile.profile_picture.url }}" alt="Profile" class="w-12 h-12 rounded-full object-cover border-2 border-white shadow-md transform transition-transform duration-300 hover:scale-105">
+          </a>
+        {% else %}
+          <div class="w-12 h-12 rounded-full bg-gradient-to-r from-pink-500 to-yellow-500 text-white flex items-center justify-center text-xl font-bold hover:animate-float">
+            <a href="{% url 'user_profile' other_user.id %}" class="text-lg font-semibold hover:underline transition-all duration-200">
+              {{ other_user.username|first|upper }}
+            </a>
+          </div>
+        {% endif %}
+        <span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white status-indicator"></span>
+      </div>
+
+      <div class="ml-4 flex-1">
+        <a href="{% url 'user_profile' other_user.id %}" class="text-lg font-semibold hover:underline transition-all duration-200">
+          {{ other_user.username }}
+        </a>
+        <div class="text-xs opacity-80 flex items-center" id="user-status">
+          <span class="w-2 h-2 rounded-full bg-green-400 mr-1"></span>
+          <span>En ligne</span>
+        </div>
+      </div>
+
+      <div class="flex space-x-2">
+        <button class="p-2 rounded-full hover:bg-white/10 transition-all duration-200 tooltip" data-tooltip="Appel audio">
+          <i class="fas fa-phone-alt"></i>
+        </button>
+        <button class="p-2 rounded-full hover:bg-white/10 transition-all duration-200 tooltip" id="share" data-tooltip="Partager">
+          <i class="fas fa-share-alt"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Chat window -->
+    <div class="flex-1 overflow-y-auto p-4 chat-background" id="chatWindow">
+      <div class="text-center text-sm text-gray-500 italic p-4 animate-pulse">La conversation commence ici</div>
+    </div>
+
+    <!-- Typing indicator -->
+    <div id="typing-status" class="px-4 text-sm text-gray-500 h-5 transition-all duration-200">
+      <!-- Typing status will appear here -->
+    </div>
+
+    <!-- Input area -->
+    <div class="p-3 bg-white border-t border-gray-100 shadow-inner">
+      <!-- File preview -->
+      <div class="file-preview mb-2 space-y-2" id="filePreview"></div>
+
+      <div class="flex items-center space-x-2">
+        <button id="fileBtn" class="p-2 rounded-full text-indigo-600 hover:bg-indigo-50 transition-all duration-200 tooltip" data-tooltip="Joindre un fichier">
+          <i class="fas fa-paperclip"></i>
+        </button>
+        <input type="file" id="fileInput" class="hidden" multiple>
+
+        <div class="relative flex-1">
+          <textarea id="messageInput" placeholder="Écrivez un message..." rows="1"
+          class="input-message w-full py-3 px-4 rounded-full border border-gray-200 focus:outline-none focus:border-indigo-300 transition-all duration-200 resize-none"></textarea>
+
+
+          <button class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-indigo-600 transition-all duration-200 tooltip" data-tooltip="Émojis">
+            <i class="far fa-smile"></i>
+          </button>
+        </div>
+
+        <button id="sendBtn" class="p-3 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white send-btn tooltip" data-tooltip="Envoyer">
+          <i class="fas fa-paper-plane transform transition-transform duration-200 hover:rotate-12"></i>
+        </button>
+      </div>
+    </div>
+
+  </div>
+  <audio id="notify-sound" src="{% static 'sounds/notification.mp3' %}" preload="auto"></audio>
+
+<script>
+  const textarea = document.getElementById('messageInput');
+  
+  function autoGrow(element) {
+    element.style.height = 'auto'; // reset height
+    element.style.height = element.scrollHeight + 'px'; // set height to scrollHeight
+  }
+  
+  textarea.addEventListener('input', () => autoGrow(textarea));
+  
+  // Init height on page load (optional)
+  window.addEventListener('load', () => autoGrow(textarea));
+</script>
+
+  <script>
+    // Le reste du JavaScript reste exactement le même...
+    document.getElementById('share').addEventListener('click', async () => {
+      const shareData = {
+        title: document.title,
+        text: 'Viens voir ce profil !',
+        url: window.location.href
+      };
+
+      if (navigator.share) {
+        try {
+          await navigator.share(shareData);
+        } catch (err) {
+          console.error('Partage échoué :', err);
+        }
+      } else {
+        try {
+          await navigator.clipboard.writeText(shareData.url);
+          showToast('Lien copié dans le presse-papier !', 'success');
+        } catch (err) {
+          console.error('Échec de la copie :', err);
+          showToast('Votre navigateur ne prend pas en charge le partage.', 'error');
+        }
+      }
+    });
+
+    // Toast notification function
+    function showToast(message, type) {
+      const toast = document.createElement('div');
+      toast.className = `fixed bottom-4 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-lg shadow-lg text-white ${
+        type === 'success' ? 'bg-gradient-to-r from-green-500 to-emerald-500' : 'bg-gradient-to-r from-red-500 to-rose-500'
+      }`;
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    let typingTimeout;
+    const chatWindow = document.getElementById("chatWindow");
+    const messageInput = document.getElementById("messageInput");
+    const sendBtn = document.getElementById("sendBtn");
+    const fileInput = document.getElementById("fileInput");
+    const fileBtn = document.getElementById("fileBtn");
+    const filePreview = document.getElementById("filePreview");
+    const notifySound = document.getElementById("notify-sound");
+    const typingStatus = document.getElementById("typing-status");
+
+    const CHAT_ID = "{{ chat.id }}";
+    const OTHER_USER = "{{ other_user.username }}";
+
+    const getFileIcon = (type) => {
+      if (type.startsWith("image")) return "🖼️";
+      if (type.startsWith("video")) return "🎥";
+      if (type.startsWith("audio")) return "🎵";
+      if (type.endsWith("pdf")) return "📄";
+      return "📁";
+    };
+
+    function scrollToBottom() {
+      setTimeout(() => {
+        chatWindow.scrollTo({
+          top: chatWindow.scrollHeight,
+          behavior: 'smooth'
+        });
+      }, 100);
+    }
+
+    function renderMessage(msg, index) {
+  const container = document.createElement("div");
+  container.classList.add("message", "mb-4");
+  container.style.setProperty('--i', index);
+
+  if (msg.is_self) {
+    container.classList.add("ml-auto", "max-w-xs", "lg:max-w-md");
+    container.innerHTML = `
+      <div class="relative bg-gradient-to-r from-indigo-500 to-indigo-600 text-white p-3 rounded-2xl rounded-tr-none shadow-lg
+                  hover:shadow-xl transition-shadow duration-300">
+        <p class="mb-1 whitespace-pre-wrap break-words">${msg.content || ''}</p>
+        ${msg.file_url ? renderFile(msg) : ''}
+        <div class="flex items-center justify-end space-x-1 text-xs mt-1 text-indigo-100 select-none">
+          <span>${msg.timestamp}</span>
+          ${msg.is_read ? '<i class="fas fa-check-double text-indigo-200"></i>' : ''}
+        </div>
+        <div class="absolute top-0 right-0 w-0 h-0 border-t-8 border-t-indigo-600 border-l-8 border-l-transparent"></div>
+      </div>
+    `;
+  } else {
+    container.classList.add("mr-auto", "max-w-xs", "lg:max-w-md");
+    container.innerHTML = `
+      <div class="flex items-start space-x-3">
+        <div class="flex-shrink-0">
+          <div class="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-r from-pink-500 to-yellow-500 text-white shadow-sm
+                      hover:animate-float select-none font-semibold text-lg">
+            ${OTHER_USER.charAt(0).toUpperCase()}
+          </div>
+        </div>
+        <div>
+          <div class="relative bg-white text-gray-800 p-3 rounded-2xl rounded-tl-none shadow-lg
+                      hover:shadow-xl transition-shadow duration-300">
+            ${!msg.is_self && msg.sender ? `<div class="font-semibold text-sm mb-1 select-text">${msg.sender}</div>` : ''}
+            <p class="mb-1 whitespace-pre-wrap break-words">${msg.content || ''}</p>
+            ${msg.file_url ? renderFile(msg) : ''}
+            <div class="text-xs text-gray-400 mt-1 select-none">${msg.timestamp}</div>
+            <div class="absolute top-0 left-0 w-0 h-0 border-t-8 border-t-white border-r-8 border-r-transparent"></div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  return container;
+}
+
+    function renderFile(msg) {
+  const type = msg.file_type || "";
+  let content = '';
+
+  const baseCardClasses = "relative rounded-3xl p-4 mb-4 shadow-xl bg-gradient-to-br from-white/80 to-white/50 backdrop-blur-md border border-white/30";
+
+  if (type.startsWith("image")) {
+    content = `
+      <div class="${baseCardClasses} group cursor-pointer overflow-hidden">
+        <img src="${msg.file_url}" alt="Image" 
+             class="rounded-3xl w-full max-h-72 object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
+        <div class="absolute inset-0 bg-black bg-opacity-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center space-x-4">
+          <button onclick="downloadFile('${msg.file_url}')" 
+                  class="p-3 bg-white bg-opacity-30 rounded-full shadow-md hover:bg-opacity-60 transition" data-tooltip="Télécharger" aria-label="Télécharger">
+            <i class="fas fa-download text-indigo-700 text-lg"></i>
+          </button>
+          <button onclick="shareFile('${msg.file_url}', '${msg.file_description || ''}')" 
+                  class="p-3 bg-white bg-opacity-30 rounded-full shadow-md hover:bg-opacity-60 transition" data-tooltip="Partager" aria-label="Partager">
+            <i class="fas fa-share-alt text-indigo-700 text-lg"></i>
+          </button>
+        </div>
+        ${msg.file_description ? `<div class="mt-3 text-gray-700 font-semibold text-center select-text">${msg.file_description}</div>` : ''}
+      </div>
+    `;
+  } else if (type.startsWith("video")) {
+    content = `
+      <div class="${baseCardClasses} shadow-lg">
+        <video controls src="${msg.file_url}" class="rounded-3xl w-full max-h-64 object-cover" preload="metadata"></video>
+        ${msg.file_description ? `<div class="mt-2 text-gray-700 font-semibold select-text">${msg.file_description}</div>` : ''}
+        <div class="flex justify-end mt-3 space-x-4">
+          <button onclick="downloadFile('${msg.file_url}')" 
+                  class="p-3 bg-indigo-100 rounded-full shadow-md hover:bg-indigo-200 transition" data-tooltip="Télécharger" aria-label="Télécharger">
+            <i class="fas fa-download text-indigo-700 text-lg"></i>
+          </button>
+          <button onclick="shareFile('${msg.file_url}', '${msg.file_description || ''}')" 
+                  class="p-3 bg-indigo-100 rounded-full shadow-md hover:bg-indigo-200 transition" data-tooltip="Partager" aria-label="Partager">
+            <i class="fas fa-share-alt text-indigo-700 text-lg"></i>
+          </button>
+        </div>
+      </div>
+    `;
+  } else if (type.startsWith("audio")) {
+    content = `
+      <div class="${baseCardClasses} flex flex-col space-y-2">
+        <audio controls src="${msg.file_url}" class="w-full rounded-3xl" preload="metadata"></audio>
+        ${msg.file_description ? `<div class="text-gray-700 font-semibold select-text">${msg.file_description}</div>` : ''}
+        <div class="flex justify-end space-x-4">
+          <button onclick="downloadFile('${msg.file_url}')" 
+                  class="p-3 bg-indigo-100 rounded-full shadow-md hover:bg-indigo-200 transition" data-tooltip="Télécharger" aria-label="Télécharger">
+            <i class="fas fa-download text-indigo-700 text-lg"></i>
+          </button>
+          <button onclick="shareFile('${msg.file_url}', '${msg.file_description || ''}')" 
+                  class="p-3 bg-indigo-100 rounded-full shadow-md hover:bg-indigo-200 transition" data-tooltip="Partager" aria-label="Partager">
+            <i class="fas fa-share-alt text-indigo-700 text-lg"></i>
+          </button>
+        </div>
+      </div>
+    `;
+  } else {
+    const fileName = msg.file_url.split('/').pop();
+    const icon = getFileIcon(type);
+
+    content = `
+      <div class="${baseCardClasses} flex items-center space-x-5 cursor-pointer hover:bg-indigo-50 transition duration-300">
+        <div class="text-indigo-600 text-5xl select-none">${icon}</div>
+        <div class="flex-1 flex flex-col justify-center overflow-hidden">
+          <a href="${msg.file_url}" download class="truncate font-semibold text-indigo-700 hover:underline transition">${fileName}</a>
+          ${msg.file_description ? `<div class="text-gray-500 italic mt-1 select-text">${msg.file_description}</div>` : ''}
+        </div>
+        <div class="flex space-x-3">
+          <button onclick="downloadFile('${msg.file_url}')" 
+                  class="p-3 rounded-full bg-indigo-100 shadow-md hover:bg-indigo-200 transition" data-tooltip="Télécharger" aria-label="Télécharger">
+            <i class="fas fa-download text-indigo-700 text-lg"></i>
+          </button>
+          <button onclick="shareFile('${msg.file_url}', '${msg.file_description || ''}')" 
+                  class="p-3 rounded-full bg-indigo-100 shadow-md hover:bg-indigo-200 transition" data-tooltip="Partager" aria-label="Partager">
+            <i class="fas fa-share-alt text-indigo-700 text-lg"></i>
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  return content;
+}
+    function formatDate(dateString) {
+      const today = new Date();
+      const messageDate = new Date(dateString);
+      const diffTime = today.setHours(0,0,0,0) - messageDate.setHours(0,0,0,0);
+      const oneDay = 86400000;
+
+      if (diffTime === 0) return "Aujourd'hui";
+      if (diffTime === oneDay) return "Hier";
+
+      return messageDate.toLocaleDateString('fr-FR', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      });
+    }
+
+    function loadMessages() {
+      fetch(`/get-chat-messages/${CHAT_ID}/`)
+        .then(response => response.json())
+        .then(data => {
+          const messages = data.messages;
+          
+          // Update typing indicator
+          if (data.typing) {
+            typingStatus.innerHTML = `
+              <div class="typing-indicator flex items-center">
+                <span>${OTHER_USER} est en train d'écrire</span>
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+            `;
+          } else {
+            typingStatus.innerHTML = '';
+          }
+
+          chatWindow.innerHTML = '';
+          let lastDate = '';
+          
+          // If no messages, show empty state
+          if (messages.length === 0) {
+            chatWindow.innerHTML = `
+              <div class="text-center p-8 text-gray-500">
+                <i class="far fa-comment-alt text-4xl mb-2 opacity-30"></i>
+                <p>Aucun message encore</p>
+                <p class="text-sm">Envoyez le premier message pour commencer la conversation</p>
+              </div>
+            `;
+            return;
+          }
+
+          messages.forEach((msg, index) => {
+            const msgDate = msg.full_date;
+            if (msgDate !== lastDate) {
+              const dateLabel = document.createElement("div");
+              dateLabel.classList.add("text-center", "text-xs", "text-gray-500", "my-4", "relative", "date-divider");
+              dateLabel.innerHTML = `
+                <span class="bg-white px-2 relative z-10">${formatDate(msgDate)}</span>
+              `;
+              chatWindow.appendChild(dateLabel);
+              lastDate = msgDate;
+            }
+
+            const msgNode = renderMessage(msg, index);
+            chatWindow.appendChild(msgNode);
+          });
+
+          scrollToBottom();
+        });
+    }
+
+    // Send message function
+    sendBtn.addEventListener("click", () => {
+      const message = messageInput.value.trim();
+      const files = Array.from(fileInput.files);
+      const formData = new FormData();
+
+      formData.append("chat_id", CHAT_ID);
+      formData.append("csrfmiddlewaretoken", "{{ csrf_token }}");
+
+      if (message) {
+        formData.append("content", message);
+      }
+
+      if (files.length > 0) {
+        formData.append("file", files[0]);
+        const description = filePreview.querySelector("textarea")?.value || "";
+        formData.append("file_description", description);
+      }
+
+      fetch("{% url 'send_private_message' %}", {
+        method: "POST",
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.content || data.file_url) {
+          const fakeMsg = {
+            sender: "{{ request.user.username }}",
+            content: data.content,
+            file_url: data.file_url,
+            file_description: data.file_description,
+            file_type: data.file_type,
+            timestamp: data.timestamp,
+            full_date: new Date().toISOString().split('T')[0],
+            is_self: true,
+            is_read: false
+          };
+
+          const msgNode = renderMessage(fakeMsg, 0);
+          chatWindow.appendChild(msgNode);
+          scrollToBottom();
+        }
+
+        setTimeout(loadMessages, 1000);
+        messageInput.value = "";
+        fileInput.value = "";
+        filePreview.innerHTML = "";
+        
+        // Play notification sound
+        notifySound.currentTime = 0;
+        notifySound.play();
+      });
+    });
+
+    // Attach file button
+    fileBtn.addEventListener("click", () => fileInput.click());
+
+    fileInput.addEventListener("change", (e) => {
+      const files = Array.from(e.target.files);
+      filePreview.innerHTML = "";
+
+      files.forEach((file) => {
+        const fileDiv = document.createElement("div");
+        fileDiv.classList.add("file-preview-item", "flex", "items-center", "justify-between", "p-3", "rounded-lg", "mb-2");
+        fileDiv.innerHTML = `
+          <div class="flex items-center">
+            <span class="text-xl mr-3">${getFileIcon(file.type)}</span>
+            <div class="truncate max-w-xs">
+              <div class="font-medium">${file.name}</div>
+              <div class="text-xs text-gray-500">${(file.size / 1024).toFixed(1)} KB</div>
+            </div>
+          </div>
+          <button onclick="removeFile(this)" class="text-red-500 hover:text-red-700 transition-colors duration-200">
+            <i class="fas fa-times"></i>
+          </button>
+          <textarea 
+            class="mt-2 w-full p-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-indigo-300 focus:border-transparent transition-all duration-200"
+            placeholder="Ajoutez une description..."
+            rows="2"
+          ></textarea>
+        `;
+        filePreview.appendChild(fileDiv);
+      });
+    });
+
+    function removeFile(btn) {
+      btn.closest('.file-preview-item').classList.add('opacity-0', 'scale-95', 'transition-opacity', 'duration-200');
+      setTimeout(() => {
+        btn.closest('.file-preview-item').remove();
+      }, 200);
+    }
+
+    async function shareFile(fileUrl, description = "") {
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: "Fichier partagé",
+            text: description || "Voici un fichier à voir",
+            url: fileUrl
+          });
+        } catch (error) {
+          console.error("Erreur lors du partage :", error);
+          showToast("Partage annulé", "error");
+        }
+      } else {
+        showToast("Partage non supporté par ce navigateur", "error");
+      }
+    }
+
+    function downloadFile(url) {
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = url.split('/').pop();
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      showToast("Téléchargement commencé", "success");
+    }
+
+    // Typing indicator
+    messageInput.addEventListener("input", () => {
+      fetch(`/typing/${CHAT_ID}/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ typing: true })
+      });
+
+      clearTimeout(typingTimeout);
+      typingTimeout = setTimeout(() => {
+        fetch(`/typing/${CHAT_ID}/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ typing: false })
+        });
+      }, 3000);
+    });
+
+    messageInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendBtn.click();
+      }
+    });
+
+    // Initial load and periodic refresh
+    loadMessages();
+
+    // Online status simulation
+    setInterval(() => {
+      const statusElement = document.getElementById('user-status');
+      const isOnline = Math.random() > 0.1;
+      
+      statusElement.innerHTML = `
+        <span class="w-2 h-2 rounded-full ${isOnline ? 'bg-green-400' : 'bg-gray-400'} mr-1 transition-colors duration-200"></span>
+        <span>${isOnline ? 'En ligne' : 'Hors ligne'}</span>
+      `;
+    }, 10000);
+  </script>
+</body>
+</html>

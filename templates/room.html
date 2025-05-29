@@ -1,656 +1,1217 @@
- {% load static %}
+{% load static %}
+{% load pwa %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CodeZone message</title>
-    
-    <!-- Font Awesome 6 Free -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-...HASH..." crossorigin="anonymous" referrerpolicy="no-referrer" />
-    
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <title>CodeZone Chat Pro</title>
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+{% progressive_web_app_meta %}
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <link rel="icon" type="image/png" href="{% static 'Icone/icone.png' %}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #e5ddd5;
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-
-        .chat-container {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            width: 100%;
-            max-width: 800px;
-            margin: auto;
-            border: 1px solid #ccc;
-            background: #ffffff;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
         }
-
-        .chat-header {
-            background: #075e54;
-            color: white;
-            padding: 10px;
-            display: flex;
-            align-items: center;
-            border-bottom: 1px solid #ccc;
+        
+        @keyframes wave {
+            0% { transform: scaleY(0.2); }
+            50% { transform: scaleY(1); }
+            100% { transform: scaleY(0.2); }
         }
-
-        .chat-header h1 {
-            font-size: 18px;
-            margin: 0;
-            flex: 1;
+        
+        .animate-message {
+            animation: fadeIn 0.3s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
         }
-
-        .chat-header button {
-            background: transparent;
-            border: none;
-            color: white;
-            cursor: pointer;
-            font-size: 16px;
+        
+        .animate-float {
+            animation: float 3s ease-in-out infinite;
         }
-
-        .chat-box {
-            flex: 1;
-            overflow-y: auto;
-            padding: 10px;
-            background: #e5ddd5;
-        }
-
-        .input-area {
-            display: flex;
-            align-items: center;
-            padding: 10px;
-            border-top: 1px solid #ccc;
-            background: #ffffff;
-        }
-
-        .input-area input[type="text"] {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            margin-right: 10px;
-        }
-
-        .input-area .file-icon, .input-area .send-icon, .input-area .record-icon {
-            background: #075e54;
-            color: white;
-            border: none;
+        
+        .typing-indicator .dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
-            padding: 10px;
-            cursor: pointer;
-            margin-left: 5px;
-            font-size: 16px;
+            background-color: #818cf8;
+            animation: wave 1.4s infinite ease-in-out;
         }
-
-        .input-area .file-icon:hover, .input-area .send-icon:hover, .input-area .record-icon:hover {
-            background: #054b43;
+        
+        .typing-indicator .dot:nth-child(2) {
+            animation-delay: 0.2s;
         }
-
-        .preview-area {
-            padding: 10px;
-            border-top: 1px solid #ccc;
-            background: #e5ddd5;
+        
+        .typing-indicator .dot:nth-child(3) {
+            animation-delay: 0.4s;
         }
-
-        .preview-area img, .preview-area video, .preview-area audio {
-            max-width: 50%;
-            margin-top: 5px;
+        
+        .scrollbar-thin::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
         }
-
-      
-.message img, .message video, .message audio{
-    width: 250px;
-    max-height: 3body {
-            
-    }00px;
-}
-      .message {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    margin-bottom: 12px;
-    padding: 10px;
-    border-radius: 12px;
-    background-color: #f1f1f1;
-    max-width: 80%;
-    word-wrap: break-word;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-/* avatar rond avec taille uniforme */
-.message .avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    object-fit: cover;
-}
-
-/* zone de contenu du message */
-.message-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    background: white;
-    border-radius: 8px;
-    padding: 8px 12px;
-    box-shadow: inset 0 0 0 1px #ddd;
-}
-
-/* contenu du texte */
-.message-content p {
-    margin: 0 0 5px;
-    line-height: 1.5;
-    white-space: pre-wrap;
-}
-
-/* heure du message */
-.message-time {
-    font-size: 0.75rem;
-    color: #888;
-    text-align: right;
-    margin-top: 4px;
-}
-
-/* mise en forme des liens */
-.message-content a {
-    color: #007bff;
-    text-decoration: underline;
-    word-break: break-all;
-}
-
-/* code inline */
-.message-content code {
-    background-color: #eee;
-    padding: 2px 4px;
-    border-radius: 4px;
-    font-family: monospace;
-    font-size: 0.95em;
-}
-
-/* blocs de code */
-.message-content pre {
-    background-color: #272822;
-    color: #f8f8f2;
-    padding: 10px;
-    border-radius: 8px;
-    overflow-x: auto;
-    font-size: 0.9em;
-    margin: 5px 0;
-}
-        .audio-lobby {
-            padding: 10px;
-            border-top: 1px solid #ccc;
-            background: #ffffff;
+        
+        .scrollbar-thin::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
         }
-
-        .audio-lobby h2 {
-            margin-top: 0;
+        
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
         }
-
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1;
+        
+        .gradient-border {
+            position: relative;
+            border-radius: 16px;
+        }
+        
+        .gradient-border::before {
+            content: '';
+            position: absolute;
+            top: -1px;
+            left: -1px;
+            right: -1px;
+            bottom: -1px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899);
+            border-radius: 16px;
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .gradient-border:hover::before {
+            opacity: 1;
+        }
+        
+        .message-bubble {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .message-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
             left: 0;
-            top: 0;
             width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.4);
-            padding-top: 60px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
         }
-
-        .modal-content {
-            background-color: #ffffff;
-            margin: 5% auto;
-            padding: 20px;
-            border: 1px solid #ccc;
-            width: 80%;
-            border-radius: 8px;
+        
+        .glow-effect {
+            box-shadow: 0 0 10px rgba(99, 102, 241, 0.3);
         }
-
-        .close {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
+        
+        .glow-effect:hover {
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
         }
-
-        .close:hover,
-        .close:focus {
-            color: black;
-            text-decoration: none;
+        
+        .code-block {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .code-block:hover {
+            transform: translateY(-2px);
+        }
+        
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(31, 41, 55, 0.7);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 12px;
             cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.3s, background 0.2s;
         }
-
-        .file-preview {
-            margin-top: 5px;
+        
+        .code-block:hover .copy-btn {
+            opacity: 1;
         }
-   @keyframes flash {
-    0% { background-color: #e0ffe0; }
-    100% { background-color: transparent; }
-}
-
-.flash {
-    animation: flash 1s ease;
-}
-
-.preview-container {
-    position: relative;
-    margin-bottom: 10px;
-    padding: 5px;
-    border-radius: 10px;
-    background: #e1f3fb;
-    display: inline-block;
-}
-
-.download-icon {
-    position: absolute;
-    bottom: 5px;
-    right: 5px;
-    background: white;
-    border: none;
-    border-radius: 50%;
-    padding: 5px;
-    cursor: pointer;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-}
-
-audio, video {
-    border-radius: 10px;
-    background: #f0f0f0;
-}
-
-.chat-image {
-    max-width: 200px;
-    border-radius: 8px;
-    margin-top: 5px;
-}
-
-.chat-video {
-    width: 100%;
-    max-width: 300px;
-    border-radius: 8px;
-    margin-top: 5px;
-}
-
-.file-message {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.download-icon i {
-    font-size: 20px;
-    color: #007bff;
-    cursor: pointer;
-}
-
-.loading-spinner {
-    width: 10px;
-    height: 10px;
-    border: 2px solid #ccc;
-    border-top: 2px solid #007bff;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
-
-.audio-message audio {
-    width: 100%;
-    max-width: 250px;
-}
-
+        
+        .copy-btn:hover {
+            background: rgba(17, 24, 39, 0.9);
+        }
+        
+        .wave-animation span {
+            display: inline-block;
+            width: 4px;
+            margin: 0 2px;
+            background: currentColor;
+            border-radius: 3px;
+            animation: wave 1.4s infinite ease-in-out;
+        }
+        
+        .wave-animation span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .wave-animation span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        .wave-animation span:nth-child(4) {
+            animation-delay: 0.6s;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .pulse-dot {
+            animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        .tooltip {
+            position: relative;
+        }
+        
+        .tooltip::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+        
+        .tooltip:hover::after {
+            opacity: 1;
+        }
+        
+        .file-card {
+            transition: all 0.3s ease;
+            background: rgba(99, 102, 241, 0.05);
+        }
+        
+        .file-card:hover {
+            transform: translateY(-2px);
+            background: rgba(99, 102, 241, 0.1);
+        }
     </style>
 </head>
-<body>
-    <div class="chat-container">
-    <div class="chat-header">
-        <h1>{{ room_details.name }}</h1>
-        <button id="group-settings">⚙️</button>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+    <div class="max-w-xl mx-auto h-screen flex flex-col overflow-hidden">
+        <!-- Chat Header with Gradient Background -->
+        <div class="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 shadow-lg flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <a href="{% url 'home' %}">
+                <button id="back-button" class="text-white hover:text-indigo-200 transition-colors tooltip" data-tooltip="Back">
+                    <i class="fas fa-chevron-left"></i>
+                </button></a>
+                <div class="relative">
+                    <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center text-indigo-600 font-bold shadow-md animate-float">
+                        {{ room_details.name|slice:":1"|upper }}
+                    </div>
+                    <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></div>
+                </div>
+                <div>
+                    <h1 class="font-semibold text-white">{{ room_details.name }}</h1>
+                    <div id="typing-status" class="text-xs text-indigo-200 opacity-0 transition-opacity">
+                        <div class="typing-indicator flex items-center space-x-1">
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                            <span>typing</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button id="search-button" class="text-white hover:text-indigo-200 transition-colors tooltip" data-tooltip="Search">
+                    <i class="fas fa-search"></i>
+                </button>
+                <button id="video-call" class="text-white hover:text-indigo-200 transition-colors tooltip" data-tooltip="Video Call">
+                    <i class="fas fa-video"></i>
+                </button>
+                <button id="group-settings" class="text-white hover:text-indigo-200 transition-colors tooltip" data-tooltip="Menu">
+                    <i class="fas fa-ellipsis-v"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Chat Messages Area -->
+        <div class="flex-1 p-4 overflow-y-auto scrollbar-thin bg-gradient-to-b from-gray-800 to-gray-900 space-y-3 relative">
+            <!-- Date separator example -->
+            <div class="text-center py-3">
+                <span class="bg-gray-700 text-xs text-gray-300 px-2 py-1 rounded-full">Today</span>
+            </div>
+            
+            <!-- Loading placeholder (will be hidden after messages load) -->
+            <div id="loading-placeholder" class="flex justify-center py-8">
+                <div class="flex space-x-2 items-center">
+                    <div class="pulse-dot w-3 h-3 rounded-full bg-indigo-400"></div>
+                    <div class="pulse-dot w-3 h-3 rounded-full bg-indigo-400" style="animation-delay: 0.2s"></div>
+                    <div class="pulse-dot w-3 h-3 rounded-full bg-indigo-400" style="animation-delay: 0.4s"></div>
+                </div>
+            </div>
+            
+            <!-- Messages will be injected here by JavaScript -->
+            <div id="chat-box" class="space-y-4"></div>
+        </div>
+        
+        <!-- Input Area with Floating Action Button for Attachments -->
+        <div class="border-t border-gray-700 bg-gray-800 p-3 relative">
+            <!-- Preview area for files being uploaded -->
+            <div id="preview-area" class="absolute bottom-full left-0 right-0 bg-gray-700 rounded-t-lg p-2 mb-2 hidden"></div>
+            
+            <div class="flex items-center space-x-2">
+                <!-- Attachment FAB -->
+                <button id="attachment-fab" class="absolute -top-8 left-4 bg-indigo-600 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg glow-effect transition-all hover:scale-110 hover:bg-indigo-500 tooltip" data-tooltip="Attach">
+                    <i class="fas fa-paperclip text-xl"></i>
+                </button>
+                
+                <!-- File input (hidden) -->
+                <input type="file" id="file-input" class="hidden" accept="image/*,video/*,audio/*,.pdf,.doc,.docx" multiple>
+                
+                <!-- Main Input -->
+                <div class="flex-1">
+                    <div class="relative">
+                        <textarea id="message-input" rows="1" 
+                                 class="w-full bg-gray-700 text-gray-100 rounded-xl p-3 pr-10 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none transition-all max-h-32"
+                                 placeholder="Type a message..."></textarea>
+                        <button id="emoji-picker" class="absolute right-2 bottom-3 text-gray-400 hover:text-indigo-400 transition-colors tooltip" data-tooltip="Emoji">
+                            <i class="far fa-smile"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Send or Record Button -->
+                <div class="flex">
+                    <button id="send-button" class="hidden bg-indigo-600 text-white p-3 rounded-full hover:bg-indigo-500 transition-all glow-effect tooltip" data-tooltip="Send">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                    <button id="record-button" class="bg-gray-700 text-gray-300 p-3 rounded-full hover:bg-gray-600 transition-all tooltip" data-tooltip="Record">
+                        <i id="mic-icon" class="fas fa-microphone"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Quick Reactions (shown when hovering over a message in the UI) -->
+            <div class="flex justify-center space-x-2 mt-3">
+                <button class="quick-reaction opacity-0 w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center transition-all hover:scale-125" 
+                        data-reaction="👍">👍</button>
+                <button class="quick-reaction opacity-0 w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center transition-all hover:scale-125" 
+                        data-reaction="❤️">❤️</button>
+                <button class="quick-reaction opacity-0 w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center transition-all hover:scale-125" 
+                        data-reaction="😂">😂</button>
+                <button class="quick-reaction opacity-0 w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center transition-all hover:scale-125" 
+                        data-reaction="😲">😲</button>
+            </div>
+        </div>
     </div>
 
-    <div class="chat-box" id="chat-box">
-        <!-- Messages ici -->
+    <!-- Voice Recording Modal -->
+    <div id="recording-modal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 z-50 hidden">
+        <div class="bg-gray-800 rounded-2xl p-6 w-80 max-w-full border border-gray-700">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-white">Recording</h3>
+                <button id="cancel-recording" class="text-gray-400 hover:text-white transition-colors">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="text-center mb10">
+                <div class="flex justify-center items-center h-16">
+                    <div class="wave-animation text-indigo-400 flex items-end h-12" id="visualizer">
+                        <span class="h-2"></span>
+                        <span class="h-4"></span>
+                        <span class="h-6"></span>
+                        <span class="h-4"></span>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="timer" class="text-center text-white text-lg mb-6">00:00.00</div>
+            
+            <div class="flex justify-center gap-4">
+                <button id="finish-recording" class="bg-indigo-600 hover:bg-indigo-500 text-white rounded-full p-3 transition-all glow-effect">
+                    <i class="fas fa-check"></i>
+                </button>
+            </div>
+        </div>
     </div>
 
-    <div class="input-area">
-        <label for="file-input" class="file-icon">📎</label>
-        <input type="file" id="file-input" style="display:none;">
-        <input type="text" id="message-input" placeholder="Tapez un message...">
-        <button id="send-button" class="send-icon">➤</button>
-        <button id="record-button" class="record-icon">🎤</button>
+    <!-- Attachment Options Modal (shown when clicking the FAB) -->
+    <div id="attachment-modal" class="fixed inset-0 flex items-end justify-center bg-black bg-opacity-50 z-40 hidden">
+        <div class="bg-gray-800 rounded-t-3xl p-6 w-full max-w-xl shadow-lg">
+            <div class="flex justify-center mb-2">
+                <div class="w-10 h-1 bg-gray-600 rounded-full"></div>
+            </div>
+            <h3 class="text-xl font-semibold text-white mb-6 text-center">Send a file</h3>
+            
+            <div class="grid grid-cols-4 gap-4">
+                
+                <button class="attachment-option flex flex-col items-center text-gray-300 hover:text-indigo-400 transition-colors">
+                    <div class="w-14 h-14 bg-gray-700 rounded-xl flex items-center justify-center mb-2 hover:bg-gray-600 transition-colors">
+                        <i class="fas fa-image text-2xl"></i>
+                    </div>
+                    <span class="text-xs">Photo</span>
+                </button>
+                
+                <button class="attachment-option flex flex-col items-center text-gray-300 hover:text-indigo-400 transition-colors">
+                    <div class="w-14 h-14 bg-gray-700 rounded-xl flex items-center justify-center mb-2 hover:bg-gray-600 transition-colors">
+                        <i class="fas fa-video text-2xl"></i>
+                    </div>
+                    <span class="text-xs">Video</span>
+                </button>
+                
+                <button class="attachment-option flex flex-col items-center text-gray-300 hover:text-indigo-400 transition-colors">
+                    <div class="w-14 h-14 bg-gray-700 rounded-xl flex items-center justify-center mb-2 hover:bg-gray-600 transition-colors">
+                        <i class="fas fa-music text-2xl"></i>
+                    </div>
+                    <span class="text-xs">Audio</span>
+                </button>
+                
+                <button class="attachment-option flex flex-col items-center text-gray-300 hover:text-indigo-400 transition-colors">
+                    <div class="w-14 h-14 bg-gray-700 rounded-xl flex items-center justify-center mb-2 hover:bg-gray-600 transition-colors">
+                        <i class="fas fa-file-alt text-2xl"></i>
+                    </div>
+                    <span class="text-xs">Document</span>
+                </button>
+            </div>
+            
+            <button id="close-attachment-modal" class="mt-8 w-full py-3 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-xl transition-colors">
+                Cancel
+            </button>
+        </div>
     </div>
 
-    <div id="preview-area" class="preview-area"></div>
-    <audio id="notificationSound" src="{% static 'sounds/notification.mp3' %}" preload="auto"></audio>
-</div>
-<script>
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
+    <script>
+        // DOM Elements
+        const chatBox = document.getElementById('chat-box');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+        const recordButton = document.getElementById('record-button');
+        const fileInput = document.getElementById('file-input');
+        const previewArea = document.getElementById('preview-area');
+        const loadingPlaceholder = document.getElementById('loading-placeholder');
+        const typingStatus = document.getElementById('typing-status');
+        const recordingModal = document.getElementById('recording-modal');
+        const attachmentModal = document.getElementById('attachment-modal');
+        const visualizer = document.getElementById('visualizer');
+        const timerDisplay = document.getElementById('timer');
+        const attachmentFab = document.getElementById('attachment-fab');
+
+        // Mock data (replace with your actual data)
+        const roomName = "{{ room }}";
+        const roomId = "{{ room_details.id }}";
+        const username = "{{ request.user.username }}";
+        
+        // State variables
+        let lastMessageCount = 0;
+        let mediaRecorder;
+        let audioChunks = [];
+        let recordingInterval;
+        let recordingStartTime;
+        let isTyping = false;
+        let audioContext;
+        let analyser;
+        let dataArray;
+        
+        // CSRF token handling
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+        const csrftoken = getCookie('csrftoken');
+        
+        // When DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            setupEventListeners();
+            checkNotificationsPermission();
+            fetchMessages();
+            setInterval(fetchMessages, 2000);
+            setupInputAutoResize();
+        });
+        
+        function setupInputAutoResize() {
+            messageInput.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+            });
+        }
+        
+        
+function showBrowserNotification(message) {
+  if (Notification.permission === "granted" && document.visibilityState !== "visible") {
+    const notif = new Notification(`Nouveau message de ${message.user}`, {
+      body: message.value ? message.value.slice(0, 100) : 'Fichier envoyé',
+      icon: message.user_profile_picture || '/static/Icone/icone.png',
+    });
+
+    notif.onclick = () => {
+      window.focus();
+    };
+  }
+}
+        
+    document.addEventListener('DOMContentLoaded', () => {
+      setupEventListeners();
+      checkNotificationsPermission();
+      fetchMessages();
+      setInterval(fetchMessages, 2000);
+      setupInputAutoResize();
+
+      // Active file input depuis chaque bouton d'option dans le modal
+      document.querySelectorAll('.attachment-option').forEach(button => {
+        button.addEventListener('click', () => {
+          document.getElementById('file-input').click();
+          attachmentModal.classList.add('hidden');
+        });
+      });
+    });
+        
+        
+        
+        
+        function setupEventListeners() {
+            // Message input events
+            messageInput.addEventListener('focus', showQuickReactions);
+            messageInput.addEventListener('blur', hideQuickReactions);
+            messageInput.addEventListener('input', handleInputChange);
+            messageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+            
+            // Buttons events
+            sendButton.addEventListener('click', sendMessage);
+            recordButton.addEventListener('click', toggleRecording);
+            document.getElementById('finish-recording').addEventListener('click', stopRecording);
+            document.getElementById('cancel-recording').addEventListener('click', cancelRecording);
+            
+            // File attachment events
+            attachmentFab.addEventListener('click', () => attachmentModal.classList.remove('hidden'));
+            document.getElementById('close-attachment-modal').addEventListener('click', () => attachmentModal.classList.add('hidden'));
+            fileInput.addEventListener('change', handleFileSelect);
+            
+            // Tooltip initialization
+            document.querySelectorAll('.tooltip').forEach(el => {
+                el.addEventListener('mouseenter', () => {
+                    const tooltip = el.getAttribute('data-tooltip');
+                    if (tooltip) {
+                        el.setAttribute('aria-label', tooltip);
+                    }
+                });
+            });
+            
+            // Quick reactions attachment to DOM (would attach to messages in a real app)
+            document.querySelectorAll('.quick-reaction').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // In a real app, this would add the reaction to a specific message
+                    alert(`Reacted with ${this.getAttribute('data-reaction')}`);
+                });
+            });
+        }
+        
+        function showQuickReactions() {
+            document.querySelectorAll('.quick-reaction').forEach(el => {
+                el.classList.remove('opacity-0');
+                el.classList.add('opacity-100');
+            });
+        }
+        
+        function hideQuickReactions() {
+            document.querySelectorAll('.quick-reaction').forEach(el => {
+                el.classList.remove('opacity-100');
+                el.classList.add('opacity-0');
+            });
+        }
+        
+        function handleInputChange() {
+    const hasText = messageInput.value.trim().length > 0;
+    const hasFile = fileInput.files.length > 0;
+
+    // Affiche le bouton envoyer si texte ou fichier
+    if (hasText || hasFile) {
+        sendButton.classList.remove('hidden');
+        recordButton.classList.add('hidden');
+    } else {
+        sendButton.classList.add('hidden');
+        recordButton.classList.remove('hidden');
+    }
+
+    // Typing indicator simulation
+    if (!isTyping && hasText) {
+        isTyping = true;
+        simulateTypingIndicator(true);
+
+        setTimeout(() => {
+            if (isTyping) {
+                simulateTypingIndicator(false);
+            }
+        }, 2000);
+    } else if (!hasText) {
+        isTyping = false;
+        simulateTypingIndicator(false);
+    }
+}
+        
+        
+        
+        function simulateTypingIndicator(show) {
+            if (show) {
+                typingStatus.classList.remove('opacity-0');
+            } else {
+                typingStatus.classList.add('opacity-0');
             }
         }
-    }
-    return cookieValue;
-}
-const csrftoken = getCookie('csrftoken');
-</script>
+        
+        function updateVisualizer() {
+            if (!analyser) return;
 
-<script>
-const chatBox = document.getElementById('chat-box');
-const messageInput = document.getElementById('message-input');
-const sendButton = document.getElementById('send-button');
-const fileInput = document.getElementById('file-input');
-const recordButton = document.getElementById('record-button');
-const previewArea = document.getElementById('preview-area');
-const notificationSound = document.getElementById('notification-sound');
-
-const roomName = "{{ room }}";
-const roomId = "{{ room_details.id }}";
-const username = "{{ request.user.username }}";
-
-let mediaRecorder;
-let chunks = [];
-
-document.addEventListener('DOMContentLoaded', () => {
-    if ("Notification" in window && Notification.permission !== "granted") {
-        Notification.requestPermission();
-    }
-
-    sendButton.addEventListener('click', sendMessage);
-    messageInput.addEventListener('keypress', e => {
-        if (e.key === 'Enter') sendMessage();
-    });
-
-    fileInput.addEventListener('change', () => {
-        previewArea.innerHTML = '';
-        const file = fileInput.files[0];
-        if (!file) return;
-
-        const url = URL.createObjectURL(file);
-        const div = document.createElement('div');
-        div.classList.add('preview-container');
-
-        const downloadIcon = document.createElement('button');
-        downloadIcon.innerHTML = '⬇️';
-        downloadIcon.classList.add('download-icon');
-        downloadIcon.addEventListener('click', async () => {
-            downloadIcon.textContent = '⏳';
-            await downloadFile(url, file.name);
-            downloadIcon.textContent = '⬇️';
-        });
-
-        if (file.type.startsWith('image/')) {
-            div.innerHTML = `<img src="${url}" style="max-width:200px;">`;
-        } else if (file.type.startsWith('video/')) {
-            div.innerHTML = `
-                <video src="${url}" style="max-width:200px;" controls controlsList="nodownload"></video>
-            `;
-        } else if (file.type.startsWith('audio/')) {
-            div.innerHTML = `
-                <audio src="${url}" controls controlsList="nodownload" style="width:200px;"></audio>
-            `;
-        } else {
-            div.innerHTML = `<span>${file.name}</span>`;
+            analyser.getByteFrequencyData(dataArray);
+            
+            // Clear previous visualization
+            visualizer.innerHTML = '';
+            
+            // Create a simple bar visualization (4 bars matching our wave animation spans)
+            const barCount = 4;
+            const step = Math.floor(dataArray.length / barCount);
+            
+            for (let i = 0; i < barCount; i++) {
+                const value = dataArray[i * step] / 255;
+                const barHeight = value * 30 + 2; // Minimum height of 2px
+                
+                const bar = document.createElement('span');
+                bar.className = 'inline-block mx-1 bg-indigo-400 rounded-t-sm';
+                bar.style.width = '4px';
+                bar.style.height = `${barHeight}px`;
+                bar.style.animationDelay = `${i * 0.2}s`;
+                
+                visualizer.appendChild(bar);
+            }
+            
+            requestAnimationFrame(updateVisualizer);
         }
+        
+        function toggleRecording() {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                stopRecording();
+                return;
+            }
+            
+            // Initialize audio context for visualization
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioContext.createAnalyser();
+            analyser.fftSize = 32;
+            const bufferLength = analyser.frequencyBinCount;
+            dataArray = new Uint8Array(bufferLength);
+            
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(stream => {
+                    const source = audioContext.createMediaStreamSource(stream);
+                    source.connect(analyser);
+                    
+                    mediaRecorder = new MediaRecorder(stream);
+                    mediaRecorder.start();
+                    
+                    // Start visualization
+                    updateVisualizer();
+                    
+                    // Show recording modal
+                    recordingModal.classList.remove('hidden');
+                    
+                    // Start timer
+                    recordingStartTime = Date.now();
+                    updateTimer();
+                    recordingInterval = setInterval(updateTimer, 100);
+                    
+                    // Collect audio chunks
+                    audioChunks = [];
+                    mediaRecorder.ondataavailable = (e) => {
+                        audioChunks.push(e.data);
+                    };
+                    
+                    mediaRecorder.onstop = () => {
+                        clearInterval(recordingInterval);
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                        sendVoiceMessage(audioBlob);
+                        
+                        // Clean up
+                        if (audioContext) audioContext.close();
+                        stream.getTracks().forEach(track => track.stop());
+                    };
+                    
+                    // Change mic icon
+                    document.getElementById('mic-icon').classList.replace('fa-microphone', 'fa-microphone-slash');
+                })
+                .catch(error => {
+                    console.error('Error accessing microphone:', error);
+                    alert('Could not access microphone. Please check permissions.');
+                });
+        }
+        
+        function updateTimer() {
+            const elapsed = Date.now() - recordingStartTime;
+            const totalSeconds = Math.floor(elapsed / 1000);
+            const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+            const seconds = (totalSeconds % 60).toString().padStart(2, '0');
+            const milliseconds = Math.floor((elapsed % 1000) / 10).toString().padStart(2, '0');
+            timerDisplay.textContent = `${minutes}:${seconds}.${milliseconds}`;
+        }
+        
+        function stopRecording() {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+                recordingModal.classList.add('hidden');
+                document.getElementById('mic-icon').classList.replace('fa-microphone-slash', 'fa-microphone');
+            }
+        }
+        
+        function cancelRecording() {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+                recordingModal.classList.add('hidden');
+                document.getElementById('mic-icon').classList.replace('fa-microphone-slash', 'fa-microphone');
+                
+                // Clean up
+                audioChunks = [];
+                if (audioContext) audioContext.close();
+            }
+        }
+        
+        function handleFileSelect() {
+            previewArea.innerHTML = '';
+            const file = fileInput.files[0];
+            if (!file) return;
+            
+            const filePreview = createFilePreview(file);
+            previewArea.appendChild(filePreview);
+            previewArea.classList.remove('hidden');
+            handleInputChange(); // pour mettre à jour l’état du bouton envoyer
+        }
+        
+        function createFilePreview(file) {
+            const previewDiv = document.createElement('div');
+            previewDiv.className = 'flex items-center justify-between p-3 bg-gray-600 rounded-lg mb-2 file-card';
+            
+            const fileInfoDiv = document.createElement('div');
+            fileInfoDiv.className = 'flex items-center flex-1 min-w-0';
+            
+            const icon = document.createElement('i');
+            if (file.type.startsWith('image/')) {
+                icon.className = 'fas fa-image text-indigo-400 mr-3 text-lg';
+            } else if (file.type.startsWith('video/')) {
+                icon.className = 'fas fa-video text-indigo-400 mr-3 text-lg';
+            } else if (file.type.startsWith('audio/')) {
+                icon.className = 'fas fa-music text-indigo-400 mr-3 text-lg';
+            } else {
+                icon.className = 'fas fa-file text-indigo-400 mr-3 text-lg';
+            }
+            
+            const fileDetails = document.createElement('div');
+            fileDetails.className = 'min-w-0';
+            
+            const fileNameSpan = document.createElement('div');
+            fileNameSpan.className = 'text-sm text-white font-medium truncate';
+            fileNameSpan.textContent = file.name;
+            
+            const fileSizeSpan = document.createElement('div');
+            fileSizeSpan.className = 'text-xs text-gray-300';
+            fileSizeSpan.textContent = formatFileSize(file.size);
+            
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'text-gray-400 hover:text-white ml-4';
+            removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+            removeBtn.onclick = () => {
+                previewArea.innerHTML = '';
+                previewArea.classList.add('hidden');
+                fileInput.value = '';
+            };
+            
+            fileDetails.appendChild(fileNameSpan);
+            fileDetails.appendChild(fileSizeSpan);
+            fileInfoDiv.appendChild(icon);
+            fileInfoDiv.appendChild(fileDetails);
+            previewDiv.appendChild(fileInfoDiv);
+            previewDiv.appendChild(removeBtn);
+            
+            // Show thumbnail for images
+            if (file.type.startsWith('image/')) {
+                const url = URL.createObjectURL(file);
+                const imgPreview = document.createElement('img');
+                imgPreview.src = url;
+                imgPreview.className = 'mt-2 max-h-40 rounded-lg w-full object-cover';
+                
+                const imgContainer = document.createElement('div');
+                imgContainer.className = 'w-full';
+                imgContainer.appendChild(imgPreview);
+                previewDiv.appendChild(imgContainer);
+            }
+            
+            return previewDiv;
+        }
+        
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+        
+        function sendMessage() {
+      const messageText = messageInput.value.trim();
+      const files = fileInput.files;
 
-        div.appendChild(downloadIcon);
-        previewArea.appendChild(div);
-    });
+      if (!messageText && files.length === 0) return;
 
-    recordButton.addEventListener('click', () => {
-        if (!mediaRecorder || mediaRecorder.state === 'inactive') {
-            navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-                mediaRecorder = new MediaRecorder(stream);
-                mediaRecorder.start();
-                recordButton.textContent = '◼️';
+      const formData = new FormData();
+      formData.append('room_id', roomId);
+      formData.append('message', messageText);
 
-                mediaRecorder.ondataavailable = e => chunks.push(e.data);
-                mediaRecorder.onstop = () => {
-                    const blob = new Blob(chunks, { type: 'audio/webm' });
-                    chunks = [];
-                    const file = new File([blob], `voice_${Date.now()}.webm`, { type: 'audio/webm' });
-                    sendVoice(file);
-                    recordButton.textContent = '🎤';
-                };
+      for (const file of files) {
+        formData.append('file', file);
+      }
+
+      fetch('/send/', {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': csrftoken
+        },
+        body: formData
+      })
+      .then(response => {
+        if (!response.ok) throw new Error('Failed to send message');
+        return response.json();
+      })
+      .then(data => {
+        if (data.status === 'Message envoyé') {
+          messageInput.value = '';
+          messageInput.style.height = 'auto';
+          fileInput.value = '';
+          previewArea.innerHTML = '';
+          previewArea.classList.add('hidden');
+          sendButton.classList.add('hidden');
+          recordButton.classList.remove('hidden');
+          fetchMessages();
+          showSentAnimation();
+        }
+      })
+      .catch(error => {
+        console.error('Error sending message:', error);
+        showError('Failed to send message. Please try again.');
+      });
+    }
+    
+    
+        function showSentAnimation() {
+            const animation = document.createElement('div');
+            animation.className = 'fixed bottom-20 right-6 bg-indigo-600 text-white p-3 rounded-full shadow-lg animate-bounce';
+            animation.innerHTML = '<i class="fas fa-check"></i>';
+            document.body.appendChild(animation);
+            
+            setTimeout(() => {
+                animation.classList.remove('animate-bounce');
+                animation.classList.add('opacity-0', 'transition-opacity');
+                setTimeout(() => animation.remove(), 300);
+            }, 1000);
+        }
+        
+        function showError(message) {
+            const error = document.createElement('div');
+            error.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-4 py-2 rounded-lg shadow-lg flex items-center';
+            error.innerHTML = `
+                <i class="fas fa-exclamation-circle mr-2"></i>
+                <span>${message}</span>
+            `;
+            document.body.appendChild(error);
+            
+            setTimeout(() => {
+                error.classList.add('opacity-0', 'transition-opacity');
+                setTimeout(() => error.remove(), 300);
+            }, 3000);
+        }
+        
+        function sendVoiceMessage(audioBlob) {
+            const formData = new FormData();
+            formData.append('room_id', roomId);
+            formData.append('username', username);
+            formData.append('file', audioBlob, `voice_message_${Date.now()}.webm`);
+            
+            fetch('/send/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken
+                },
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Failed to send audio message');
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 'Message envoyé') {
+                    fetchMessages();
+                }
+            })
+            .catch(error => {
+                console.error('Error sending voice message:', error);
+                showError('Failed to send voice message. Please try again.');
             });
-        } else if (mediaRecorder.state === 'recording') {
-            mediaRecorder.stop();
         }
-    });
+      function fetchMessages() {
+  fetch(`/getMessages/${roomName}/`)
+    .then(response => response.json())
+    .then(data => {
+      if (!data.messages || data.messages.length === 0) return;
 
-    fetchMessages();
-    setInterval(fetchMessages, 3000);
+      if (data.messages.length !== lastMessageCount) {
+        const lastMessage = data.messages[data.messages.length - 1];
+
+        // Jouer un son si pas toi
+        if (lastMessage.user !== username) {
+          playNotificationSound();
+          showBrowserNotification(lastMessage);
+          incrementUnread();  // badge dans l'onglet
+        }
+
+        lastMessageCount = data.messages.length;
+        renderMessages(data.messages);
+      }
+    })
+    .catch(error => console.error("Erreur messages:", error));
+}
+
+let unreadCount = 0;
+
+function incrementUnread() {
+  if (document.visibilityState !== "visible") {
+    unreadCount++;
+    document.title = `(${unreadCount}) Nouveau message`;
+  }
+}
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") {
+    unreadCount = 0;
+    document.title = "CodeZone Chat Pro";
+  }
 });
 
-async function downloadFile(url, filename) {
-    const response = await fetch(url);
-    const blob = await response.blob();
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = filename;
-    a.click();
-}
-
-
-function sendMessage() {
-    const message = messageInput.value.trim();
-    const file = fileInput.files[0];
-    if (!message && !file) return;
-
-    const formData = new FormData();
-formData.append('room_id', roomId);
-formData.append('message', message);
-if (file) formData.append('file', file);
-
-    fetch('/send/', {
-    method: 'POST',
-    headers: {
-        'X-CSRFToken': csrftoken
-    },
-    body: formData
-})
-    .then(res => res.json())
-    .then(data => {
-        if (data.status === 'Message envoyé') {
-            messageInput.value = '';
-            fileInput.value = '';
-            previewArea.innerHTML = '';
-            fetchMessages();
+        function playNotificationSound() {
+            const audio = new Audio('/static/sounds/notification.mp3');
+            audio.play().catch(e => console.log('Could not play notification sound:', e));
         }
-    })
-    .catch(err => {
-        console.error('Erreur envoi :', err);
-        alert("Erreur lors de l'envoi du message.");
-    });
-}
-
-
-function sendVoice(file) {
-    const formData = new FormData();
-    formData.append('username', username);
-    formData.append('room_id', roomId);
-    formData.append('file', file);
-
-    fetch('/send/', {
-    method: 'POST',
-    headers: {
-        'X-CSRFToken': csrftoken
-    },
-    body: formData
-}).then(() => fetchMessages());
-}
-
-if ("Notification" in window && Notification.permission !== "granted") {
-    Notification.requestPermission();
-}
-
-let lastMessageCount = 0;
-
-function fetchMessages() {
-    fetch(`/getMessages/${roomName}/`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.messages.length === lastMessageCount) return; // Pas de nouveau message
-            lastMessageCount = data.messages.length;
-
-            const wasAtBottom = chatBox.scrollTop + chatBox.clientHeight >= chatBox.scrollHeight - 20;
-            chatBox.innerHTML = '';
-
-            data.messages.forEach(msg => {
-                const type = msg.file_url ? getFileType(msg.file_name) : 'text';
-                const content = msg.file_url
-                    ? { type: type, url: msg.file_url, name: msg.file_name }
-                    : msg.value;
-                addMessageToChat(msg.user, content, type, msg.date);
+        
+        function renderMessages(messages) {
+            const wasAtBottom = isScrolledToBottom();
+            
+            // Create a document fragment for optimized DOM manipulation
+            const fragment = document.createDocumentFragment();
+            
+            messages.forEach(msg => {
+                // Create a date separator if needed (in real app, compare with previous message date)
+                if (Math.random() > 0.8) { // Just for demo, in real app use actual date comparison
+                    const dateDiv = document.createElement('div');
+                    dateDiv.className = 'text-center py-3';
+                    const dateStr = new Date(msg.date).toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
+                    dateDiv.innerHTML = `<span class="bg-gray-700 text-xs text-gray-300 px-2 py-1 rounded-full">${dateStr}</span>`;
+                    fragment.appendChild(dateDiv);
+                }
+                
+                const messageElement = createMessageElement(msg);
+                fragment.appendChild(messageElement);
             });
+            
+            // Clear chat box and append all messages
+            chatBox.innerHTML = '';
+            chatBox.appendChild(fragment);
+            
+            // Scroll to bottom if user was already there
+            if (wasAtBottom) {
+                scrollToBottom();
+            }
+            
+            // Apply syntax highlighting to code blocks
+            applyCodeHighlighting();
+        }
+        
+        function createMessageElement(message) {
+    const msgEl = document.createElement('div');
+    const isCurrentUser = message.user === username;
+    
+    msgEl.className = `animate-message ${isCurrentUser ? 'mr-0 ml-auto' : 'ml-0 mr-auto'}`;
 
-            if (wasAtBottom) chatBox.scrollTop = chatBox.scrollHeight;
-        })
-        .catch(error => {
-            console.error("Erreur lors de la récupération des messages :", error);
-        });
+    const bubbleClasses = [
+        isCurrentUser ? 'bg-indigo-600 text-white' : 'bg-gray-700 text-gray-100',
+        'rounded-2xl',
+        'p-4',
+        'max-w-xs',
+        'shadow',
+        'message-bubble'
+    ].join(' ');
+     {
+    "user": "Jean",
+    "user_profile_picture": "/media/profile_pics/jean.png",
+    ...
 }
+    const avatarUrl = message.user_profile_picture 
+        ? message.user_profile_picture 
+        : `https://ui-avatars.com/api/?name=${encodeURIComponent(message.user)}&background=4f46e5&color=fff&size=100`;
 
-function formatMessageText(text) {
-    // blocs ```lang
-    text = text.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
-        lang = lang || 'plaintext';
-        return `<pre><code class="language-${lang}">${escapeHtml(code)}</code></pre>`;
-    });
-
-    // blocs indentés (4 espaces ou tab)
-    text = text.replace(/^( {4}|\t)(.*(?:\n\1.*)*)/gm, (match) => {
-        const code = match.replace(/^( {4}|\t)/gm, '');
-        return `<pre><code class="language-plaintext">${escapeHtml(code)}</code></pre>`;
-    });
-
-    // inline code `code`
-    text = text.replace(/`([^`]+)`/g, (_, code) => {
-        return `<code>${escapeHtml(code)}</code>`;
-    });
-
-    // liens
-    text = text.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>');
-
-    // retour à la ligne
-    return text.replace(/\n/g, '<br>');
-}
-
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-
-function flashChatBox() {
-    chatBox.classList.add('flash');
-    setTimeout(() => chatBox.classList.remove('flash'), 1000);
-}
-
-
-function addMessageToChat(sender, content, type, date) {
-    const msg = document.createElement('div');
-    msg.className = 'message';
-    const time = new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(sender.charAt(0))}&background=random&color=fff&size=40`;
-
-    let filePreview = '';
-    if (type !== 'text') {
-        filePreview = getFilePreview(content);
-        content = '';
-    } else {
-        content = formatMessageText(content);
+    let content = '';
+    if (message.value) {
+        content = formatMessageText(message.value);
+    } else if (message.file_url) {
+        content = createFileMessageContent(message);
     }
 
-    msg.innerHTML = `
-        <img src="${avatar}" class="avatar" alt="${sender}">
-        <div class="message-content">
-            <p><strong>${sender}:</strong> ${content}</p>
-            ${filePreview}
-            <div class="message-time">${time}</div>
+    const adminBadge = message.is_admin
+        ? `<span class="ml-2 px-2 py-0.5 text-xs bg-yellow-400 text-black rounded-full">Admin</span>`
+        : '';
+
+    const profileUrl = `/user_profile/${message.user_id}/`; // à adapter selon ton URL Django
+    const time = new Date(message.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    msgEl.innerHTML = `
+        <div class="flex ${isCurrentUser ? 'flex-row-reverse' : ''} items-start gap-3">
+            <a href="${profileUrl}" title="Voir le profil">
+                <img src="${avatarUrl}" class="w-8 h-8 rounded-full hover:ring-2 hover:ring-indigo-300 transition" alt="${message.user}">
+            </a>
+            <div class="${bubbleClasses} ${isCurrentUser ? 'rounded-tr-none' : 'rounded-tl-none'}">
+                ${!isCurrentUser ? `
+                    <div class="font-semibold text-xs mb-1 text-indigo-300 flex items-center">
+                        ${message.user}${adminBadge}
+                    </div>` : ''
+                }
+                ${content}
+                <div class="flex items-center justify-end mt-2">
+                    <span class="text-xs ${isCurrentUser ? 'text-indigo-200' : 'text-gray-400'}">${time}</span>
+                    ${isCurrentUser ? '<i class="fas fa-check ml-1 text-xs text-indigo-200"></i>' : ''}
+                </div>
+            </div>
         </div>
     `;
 
-    chatBox.appendChild(msg);
+    return msgEl;
+}
+        function createFileMessageContent(message) {
+            const fileType = getFileType(message.file_url);
+            const safeUrl = encodeURI(message.file_url);
+            const fileName = message.file_name || 'file';
+            
+            if (fileType === 'image') {
+                return `
+                    <div class="relative">
+                        <img src="${safeUrl}" alt="Image" class="rounded-lg max-w-full h-auto glow-effect cursor-pointer transition-transform hover:scale-105">
+                        <a href="${safeUrl}" download="${fileName}" 
+                           class="absolute top-2 right-2 bg-black bg-opacity-50 text-white p-1 rounded-full hover:bg-opacity-70 transition-colors tooltip" 
+                           data-tooltip="Download">
+                            <i class="fas fa-download text-xs"></i>
+                        </a>
+                    </div>
+                `;
+            } else if (fileType === 'video') {
+                return `
+                    <div class="relative">
+                        <video controls class="rounded-lg max-w-full h-auto bg-black">
+                            <source src="${safeUrl}" type="video/mp4">
+                        </video>
+                        <a href="${safeUrl}" download="${fileName}" 
+                           class="absolute top-2 right-2 bg-black bg-opacity-50 text-white p-1 rounded-full hover:bg-opacity-70 transition-colors tooltip" 
+                           data-tooltip="Download">
+                            <i class="fas fa-download text-xs"></i>
+                        </a>
+                    </div>
+                `;
+            } else if (fileType === 'audio') {
+                return `
+                    <div class="flex flex-col">
+                        <audio controls class="w-full">
+                            <source src="${safeUrl}" type="audio/mpeg">
+                            Your browser does not support the audio element.
+                        </audio>
+                        <div class="flex items-center justify-between mt-2">
+                            <span class="text-xs text-gray-400 truncate flex-1 mr-2">${fileName}</span>
+                            <a href="${safeUrl}" download="${fileName}" 
+                               class="bg-gray-600 hover:bg-gray-500 text-white text-xs p-1 rounded transition-colors tooltip" 
+                               data-tooltip="Download">
+                                <i class="fas fa-download"></i>
+                            </a>
+                        </div>
+                    </div>
+                `;
+            } else {
+                return `
+                    <div class="flex items-center p-3 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors">
+                        <i class="fas fa-file text-indigo-400 mr-3"></i>
+                        <div class="flex-1 min-w-0">
+                            <div class="text-sm font-medium truncate">${fileName}</div>
+                            <div class="text-xs text-gray-400">${getFileExtension(fileName).toUpperCase()} File</div>
+                        </div>
+                        <a href="${safeUrl}" download="${fileName}" 
+                           class="ml-2 bg-gray-700 hover:bg-gray-600 text-gray-300 p-1 rounded-full transition-colors tooltip" 
+                           data-tooltip="Download">
+                            <i class="fas fa-download text-xs"></i>
+                        </a>
+                    </div>
+                `;
+            }
+        }
+        
+        
+        
+        function getFileExtension(filename) {
+            return filename.split('.').pop().toLowerCase();
+        }
+        
+        function getFileType(url) {
+            if (!url) return 'other';
+            
+            const extension = url.split('.').pop().toLowerCase();
+            if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension)) return 'image';
+            if (['mp4', 'webm', 'mov'].includes(extension)) return 'video';
+            if (['mp3', 'wav', 'ogg', 'm4a'].includes(extension)) return 'audio';
+            
+            return 'other';
+        }
+        
+        function formatMessageText(text) {
+            if (!text) return '';
+            
+            // Process code blocks first (```lang code```)
+            text = text.replace(/```([a-z]*)\n([\s\S]*?)```/g, (_, lang, code) => {
+                lang = lang || 'plaintext';
+                return `<div class="code-block rounded-lg overflow-hidden my-2 relative">
+                    <pre><code class="language-${lang}">${escapeHtml(code.trim())}</code></pre>
+                </div>`;
+            });
+            
+            // Process inline code (`code`)
+            text = text.replace(/`([^`]+)`/g, '<code class="bg-gray-800 text-indigo-200 px-1 py-0.5 rounded">$1</code>');
+            
+            // Process links (autolink URLs)
+            text = text.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" class="text-indigo-300 hover:underline">$1</a>');
+            
+            // Process newlines
+            text = text.replace(/\n/g, '<br>');
+            
+            // Process markdown-style bold (**bold**)
+            text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            
+            // Process markdown-style italic (*italic*)
+            text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            
+            return text;
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function applyCodeHighlighting() {
+            document.querySelectorAll('pre code').forEach((block) => {
+                // Apply syntax highlighting
+                hljs.highlightElement(block);
+                
+                // Add copy button
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'copy-btn';
+                copyBtn.innerHTML = '<i class="fas fa-copy"></i>';
+                copyBtn.onclick = () => {
+                    navigator.clipboard.writeText(block.textContent)
+                        .then(() => {
+                            copyBtn.innerHTML = '<i class="fas fa-check"></i>';
+                            setTimeout(() => {
+                                copyBtn.innerHTML = '<i class="fas fa-copy"></i>';
+                            }, 2000);
+                        })
+                        .catch(err => console.error('Could not copy text: ', err));
+                };
+                
+                const preBlock = block.parentElement;
+                preBlock.appendChild(copyBtn);
+                
+                // Make code blocks horizontally scrollable if needed
+                preBlock.style.overflowX = 'auto';
+            });
+        }
+        
+        function isScrolledToBottom() {
+            return chatBox.scrollHeight - chatBox.clientHeight <= chatBox.scrollTop + 100;
+        }
+        
+        function scrollToBottom() {
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+        
+        function checkNotificationsPermission() {
+            if ("Notification" in window && Notification.permission !== "granted") {
+                Notification.requestPermission();
+            }
+        }
+    </script>
+    
+    <script>
+  let deferredPrompt;
 
-    // Activer la coloration syntaxique si bloc de code détecté
-    msg.querySelectorAll('pre code').forEach((block) => {
-        hljs.highlightElement(block);
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault(); // Empêche Chrome d'afficher la bannière automatiquement
+    deferredPrompt = e;
+
+    // Crée le bouton "Installer CodeZone"
+    const installBtn = document.createElement('button');
+    installBtn.textContent = "Installer CodeZone";
+    installBtn.className = "fixed bottom-4 right-4 bg-indigo-600 text-white px-4 py-2 rounded shadow-lg hover:bg-indigo-700 z-50";
+    document.body.appendChild(installBtn);
+
+    installBtn.addEventListener('click', () => {
+      deferredPrompt.prompt(); // Affiche la bannière d'installation
+
+      deferredPrompt.userChoice.then((choiceResult) => {
+        if (choiceResult.outcome === 'accepted') {
+          console.log('L\'utilisateur a accepté l\'installation');
+        } else {
+          console.log('L\'utilisateur a refusé l\'installation');
+        }
+        installBtn.remove(); // Supprime le bouton après action
+      });
     });
-}
-
-
-function getFileType(filename) {
-    const ext = filename.split('.').pop().toLowerCase();
-    if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) return 'image/';
-    if (['mp4', 'webm'].includes(ext)) return 'video/';
-    if (['mp3', 'wav'].includes(ext)) return 'audio/';
-    return 'file/';
-}
-
-function getFilePreview(file) {
-    const safeUrl = encodeURI(file.url); // pour éviter les problèmes avec les caractères spéciaux
-    const fileName = file.name || 'fichier';
-
-    if (file.type.startsWith('image/')) {
-        return `
-            <img src="${safeUrl}" alt="Aperçu de l'image" class="file-preview" style="max-width:200px;">
-            <div style="margin-top:10px;">
-                <a href="${safeUrl}" download="${fileName}" title="Télécharger">
-                    <i class="fas fa-download"></i> Télécharger
-                </a>
-            </div>
-        `;
-    }
-
-    if (file.type.startsWith('video/')) {
-        return `
-            <video controls src="${safeUrl}" style="max-width:200px;"></video>
-            <div style="margin-top:10px;">
-                <a href="${safeUrl}" download="${fileName}" title="Télécharger la vidéo">
-                    <i class="fas fa-download"></i> Télécharger
-                </a>
-            </div>
-        `;
-    }
-
-    if (file.type.startsWith('audio/')) {
-        return `
-            <audio controls src="${safeUrl}"></audio>
-            <div style="margin-top:10px;">
-                <a href="${safeUrl}" download="${fileName}" title="Télécharger l'audio">
-                    <i class="fas fa-download"></i> Télécharger
-                </a>
-            </div>
-        `;
-    }
-
-    return `
-        <i class="fas fa-file"></i>
-        <a href="${safeUrl}" download="${fileName}" title="Télécharger le fichier">
-            ${fileName}
-        </a>
-    `;
-}
-
+  });
 </script>
 </body>
 </html>
+
+

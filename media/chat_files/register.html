@@ -1,0 +1,113 @@
+{% load static %}
+{% load pwa %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inscription - CodeZone</title>
+  <meta property="og:image" content="{{ request.build_absolute_uri }}{% static 'Icone/icone.png' %}">
+  <link rel="manifest" href="{% static 'manifest.json' %}">
+{% progressive_web_app_meta %}
+ 
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="icon" type="image/png" href="{% static 'Icone/icone.png' %}">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body class="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-500 to-indigo-600 font-['Poppins'] p-4">
+
+  <div class="bg-white rounded-xl shadow-lg max-w-md w-full p-8 space-y-6">
+    <div class="text-center">
+      <div class="inline-flex items-center justify-center w-16 h-16 bg-purple-500 text-white rounded-full shadow-lg">
+        <i class="fas fa-user-plus text-xl"></i>
+      </div>
+      <h2 class="text-2xl font-bold text-gray-800 mt-4">Créer un compte</h2>
+      <p class="text-gray-500 text-sm">Inscrivez-vous pour rejoindre un groupe de chat</p>
+    </div>
+
+    <form method="POST" class="space-y-4">
+      {% csrf_token %}
+      {% for message in messages %}
+        <p class="text-red-500 text-sm">{{ message }}</p>
+      {% endfor %}
+      <div>
+        <label class="block text-sm text-gray-700">Nom d'utilisateur</label>
+        <input type="text" name="username" class="w-full border border-gray-300 rounded-lg px-4 py-3 mt-1 focus:outline-none focus:ring-2 focus:ring-purple-400" required>
+      </div>
+      
+      <div>
+        <label class="block text-sm text-gray-700">email</label>
+        <input type="email" name="email" class="w-full border border-gray-300 rounded-lg px-4 py-3 mt-1 focus:outline-none focus:ring-2 focus:ring-purple-400" required>
+      </div>
+
+      <div>
+        <label class="block text-sm text-gray-700">Mot de passe</label>
+        <input type="password" name="password" class="w-full border border-gray-300 rounded-lg px-4 py-3 mt-1 focus:outline-none focus:ring-2 focus:ring-purple-400" required>
+      </div>
+<ul class="text-sm text-gray-600 space-y-1" id="password-rules">
+  <li id="len" class="text-red-500">• Au moins 8 caractères</li>
+  <li id="upper" class="text-red-500">• Une majuscule</li>
+  <li id="lower" class="text-red-500">• Une minuscule</li>
+  <li id="digit" class="text-red-500">• Un chiffre</li>
+  <li id="special" class="text-red-500">• Un caractère spécial</li>
+</ul>
+      <button type="submit" class="w-full bg-purple-500 text-white font-semibold py-3 rounded-lg hover:bg-purple-600 transition">
+        S'inscrire
+      </button>
+    </form>
+
+    <p class="text-center text-sm text-gray-500">Déjà inscrit ? <a href="{% url 'login' %}" class="text-purple-600 hover:underline">Se connecter</a></p>
+  </div>
+<script>
+  const passwordInput = document.querySelector('input[name="password"]');
+  const rules = {
+    len: /.{8,}/,
+    upper: /[A-Z]/,
+    lower: /[a-z]/,
+    digit: /[0-9]/,
+    special: /[!@#$%^&*(),.?":{}|<>]/
+  };
+
+  passwordInput.addEventListener('input', () => {
+    for (const [id, regex] of Object.entries(rules)) {
+      const element = document.getElementById(id);
+      if (regex.test(passwordInput.value)) {
+        element.classList.remove('text-red-500');
+        element.classList.add('text-green-600');
+      } else {
+        element.classList.remove('text-green-600');
+        element.classList.add('text-red-500');
+      }
+    }
+  });
+</script>
+
+<script>
+  let deferredPrompt;
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault(); // Empêche Chrome d'afficher la bannière automatiquement
+    deferredPrompt = e;
+
+    // Crée le bouton "Installer CodeZone"
+    const installBtn = document.createElement('button');
+    installBtn.textContent = "Installer CodeZone";
+    installBtn.className = "fixed bottom-4 right-4 bg-indigo-600 text-white px-4 py-2 rounded shadow-lg hover:bg-indigo-700 z-50";
+    document.body.appendChild(installBtn);
+
+    installBtn.addEventListener('click', () => {
+      deferredPrompt.prompt(); // Affiche la bannière d'installation
+
+      deferredPrompt.userChoice.then((choiceResult) => {
+        if (choiceResult.outcome === 'accepted') {
+          console.log('L\'utilisateur a accepté l\'installation');
+        } else {
+          console.log('L\'utilisateur a refusé l\'installation');
+        }
+        installBtn.remove(); // Supprime le bouton après action
+      });
+    });
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Paiement avec CinetPay</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <div class="bg-white p-8 rounded shadow-md w-full max-w-md">
+        <h1 class="text-2xl font-bold mb-4 text-center">Paiement sécurisé</h1>
+
+        <form id="payment-form" class="space-y-4">
+            <div>
+                <label for="amount" class="block text-sm font-medium">Montant (XAF)</label>
+                <input type="number" id="amount" name="amount" required min="100"
+                    class="mt-1 block w-full px-4 py-2 border rounded focus:ring-indigo-500 focus:border-indigo-500">
+            </div>
+
+            <div>
+                <label for="phone_number" class="block text-sm font-medium">Numéro de téléphone</label>
+                <input type="tel" id="phone_number" name="phone_number" required
+                    class="mt-1 block w-full px-4 py-2 border rounded focus:ring-indigo-500 focus:border-indigo-500">
+            </div>
+
+            <div>
+                <label for="operator" class="block text-sm font-medium">Opérateur</label>
+                <select id="operator" name="operator" required
+                    class="mt-1 block w-full px-4 py-2 border rounded focus:ring-indigo-500 focus:border-indigo-500">
+                    <option value="">Sélectionnez</option>
+                    <option value="ORANGEMONEY">Orange Money</option>
+                    <option value="MTNMONEY">MTN Mobile Money</option>
+                </select>
+            </div>
+
+            <button type="submit"
+                class="w-full bg-indigo-600 text-white py-2 px-4 rounded hover:bg-indigo-700">
+                Payer maintenant
+            </button>
+        </form>
+
+        <div id="message" class="text-center text-sm mt-4"></div>
+    </div>
+
+    <script>
+        const form = document.getElementById("payment-form");
+        const message = document.getElementById("message");
+
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData(form);
+
+            const response = await fetch("{% url 'paiement_cinetpay' %}", {
+                method: "POST",
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (result.payment_url) {
+                window.location.href = result.payment_url;
+            } else {
+                message.textContent = result.error || "Erreur lors de la requête.";
+                message.classList.add("text-red-600");
+            }
+        });
+    </script>
+</body>
+</html>

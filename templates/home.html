@@ -1,145 +1,509 @@
 {% load static %}
+{% load pwa %}
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>CodeZone Chat</title>
-  <link rel="icon" type="image/png" href="{% static 'Icone/file_00000000e6dc61f892653be5b6256447_conversation_id=6820d600-fb80-8010-bcad-e76a3e1dab1b&message_id=123703f2-52e9-4850-9d3d-64bcf00a2dd4.png' %}">
+  <link rel="manifest" href="{% static 'manifest.json' %}" />
+  {% progressive_web_app_meta %}
+  <link rel="icon" type="image/png" href="{% static 'Icone/icone.png' %}" />
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    @keyframes float {
-      0% { transform: translateY(0); }
-      50% { transform: translateY(-10px); }
-      100% { transform: translateY(0); }
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            dark: {
+              900: '#0f172a',
+              800: '#1e293b',
+              700: '#334155',
+              600: '#475569',
+              500: '#64748b',
+            },
+            indigo: {
+              dark: '#6366f1',
+              darker: '#4f46e5'
+            },
+            purple: {
+              dark: '#8b5cf6',
+              darker: '#7c3aed'
+            }
+          },
+          animation: {
+            float: 'float 4s ease-in-out infinite',
+          },
+          keyframes: {
+            float: {
+              '0%, 100%': { transform: 'translateY(0)' },
+              '50%': { transform: 'translateY(-10px)' },
+            }
+          }
+        }
+      }
     }
-    .animate-float { animation: float 4s ease-in-out infinite; }
-    .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-    .group-item:hover { transform: translateX(5px); }
-    .group-item { transition: all 0.3s ease; }
-    .input-focus:focus { box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3); }
+  </script>
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+  />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+  <style>
+    .gradient-bg-dark {
+      background: linear-gradient(135deg, #1e1b4b 0%, #581c87 100%);
+    }
+    .group-item:hover {
+      transform: translateX(5px);
+    }
+    .group-item {
+      transition: all 0.3s ease;
+    }
+    .input-focus:focus {
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background-color: rgba(100, 116, 139, 0.6);
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background-color: rgba(15, 23, 42, 0.2);
+    }
+    .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+      background-color: rgba(148, 163, 184, 0.4);
+    }
+    .dark .input-focus:focus {
+      box-shadow: 0 0 0 3px rgba(165, 180, 252, 0.3);
+    }
+    .ring-glow {
+      box-shadow: 0 0 15px rgba(139, 92, 246, 0.5);
+    }
+    .toggle-bg:after {
+      content: '';
+      @apply absolute top-0.5 left-0.5 bg-white border border-gray-300 rounded-full h-5 w-5 transition shadow-sm;
+    }
+    input:checked + .toggle-bg:after {
+      transform: translateX(100%);
+      @apply border-gray-300;
+    }
+    input:checked + .toggle-bg {
+      @apply bg-indigo-600 border-indigo-600;
+    }
   </style>
 </head>
-<body class="font-['Poppins'] min-h-screen gradient-bg flex flex-col items-center justify-center p-4">
-
+<body class="font-['Poppins'] min-h-screen gradient-bg-dark dark:text-gray-200 flex flex-col items-center justify-center p-4 transition-colors duration-300">
   <!-- décor animé -->
-  <div class="absolute top-0 left-0 w-full h-full opacity-5">
-    <div class="absolute top-20 left-10 w-32 h-32 rounded-full bg-purple-300 animate-float"></div>
-    <div class="absolute top-1/3 right-20 w-24 h-24 rounded-full bg-blue-300 animate-float" style="animation-delay: 0.5s;"></div>
-    <div class="absolute bottom-20 left-1/3 w-28 h-28 rounded-full bg-indigo-300 animate-float" style="animation-delay: 1s;"></div>
+  <div class="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+    <div
+      class="absolute top-20 left-10 w-32 h-32 rounded-full bg-purple-900 opacity-20 animate-float"
+    ></div>
+    <div
+      class="absolute top-1/3 right-20 w-24 h-24 rounded-full bg-indigo-900 opacity-20 animate-float"
+      style="animation-delay: 0.5s"
+    ></div>
+    <div
+      class="absolute bottom-20 left-1/3 w-28 h-28 rounded-full bg-violet-900 opacity-20 animate-float"
+      style="animation-delay: 1s"
+    ></div>
   </div>
 
-  <!-- Formulaire création de groupe (masqué par défaut) -->
-  <div class="relative z-10 w-full max-w-md mb-8 hidden" id="create-group-form">
-    <div class="bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300">
-      <div class="p-8">
-        <div class="flex justify-end">
-          <button id="close-form" class="text-gray-400 hover:text-gray-700 text-xl">&times;</button>
-        </div>
-        <div class="flex justify-center mb-6">
-          <div class="bg-gradient-to-r from-indigo-500 to-purple-600 p-3 rounded-full shadow-lg">
-            <i class="fas fa-comments text-white text-2xl"></i>
-          </div>
-        </div>
-        <h2 class="text-3xl font-bold text-center text-gray-800 mb-2">Créer un Groupe</h2>
-        <p class="text-center text-gray-500 mb-6">Bienvenue {{ request.user.username }}</p>
+  <!-- Conteneur principal (occuper toute la hauteur) -->
+  <div
+    class="relative z-10 w-full max-w-md h-screen flex flex-col bg-white dark:bg-dark-800 rounded-3xl shadow-xl overflow-hidden ring-2 ring-indigo-500/10 dark:ring-indigo-500/20"
+  >
+    <!-- Header avec toggle dark mode -->
+    <div
+      class="p-6 flex items-center justify-between border-b border-gray-200 dark:border-dark-600 select-none relative"
+    >
+      <h3 class="text-2xl font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+        <i class="fas fa-users text-indigo-500 dark:text-indigo-400"></i> Groupes existants
+      </h3>
+      <div class="flex items-center gap-4">
+        <span
+          class="bg-indigo-100 dark:bg-indigo-900/60 text-indigo-800 dark:text-indigo-200 text-xs font-semibold px-3 py-1 rounded-full"
+        >
+          {{ rooms|length }} disponibles
+        </span>
+        
+        <label class="relative inline-flex items-center cursor-pointer">
+          <input type="checkbox" id="darkModeToggle" class="sr-only peer">
+          <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-600"></div>
+          <span class="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+            <i class="fas fa-moon"></i>
+          </span>
+        </label>
+      </div>
+    </div>
 
-        <form method="POST" action="{% url 'checkview' %}" class="space-y-4">
+    <!-- Barre de recherche -->
+    <div class="p-4 border-b border-gray-200 dark:border-dark-600">
+      <div class="relative">
+        <input
+          type="text"
+          id="search-room"
+          placeholder="Rechercher un groupe..."
+          class="w-full px-4 py-3 border border-gray-300 dark:border-dark-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-600 transition bg-white dark:bg-dark-700 text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-400"
+        />
+        <i class="fas fa-search absolute right-4 top-3.5 text-gray-400 dark:text-gray-500"></i>
+      </div>
+    </div>
+
+    <!-- Liste scrollable des groupes -->
+    <div class="flex-1 overflow-y-auto px-4 py-5 space-y-4 custom-scrollbar">
+     
+{% for room in rooms %}
+  <div
+    class="group bg-indigo-50 dark:bg-dark-700/50 rounded-2xl p-5 shadow-md dark:shadow-none flex justify-between items-center border border-indigo-200 dark:border-dark-600 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg dark:hover:ring-glow cursor-pointer"
+    tabindex="0"
+    role="button"
+    aria-label="Groupe {{ room.name }}"
+  >
+    <div class="flex items-center gap-4 truncate min-w-0">
+      <div
+        class="w-12 h-12 rounded-full bg-indigo-200 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 flex items-center justify-center text-xl font-semibold select-none shrink-0"
+      >
+        <i class="fas fa-hashtag"></i>
+      </div>
+      <a
+        href="/{{ room.name|urlencode }}/"
+        class="text-indigo-900 dark:text-indigo-300 font-semibold text-lg truncate hover:text-indigo-700 dark:hover:text-indigo-200 transition"
+      >
+        {{ room.name }}
+      </a>
+    </div>
+
+    <div class="flex items-center gap-3 flex-shrink-0">
+      <!-- Bouton partager -->
+      <button
+        onclick="shareGroup('{{ request.scheme }}://{{ request.get_host }}/{{ room.name }}/')"
+        title="Partager le groupe {{ room.name }}"
+        aria-label="Partager {{ room.name }}"
+        class="p-3 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
+      >
+        <i class="fas fa-share-alt"></i>
+      </button>
+
+      {% if room.created_by == request.user %}
+      <div class="flex items-center gap-3">
+        <!-- Bouton ouvrir modal renommage -->
+        <button
+          onclick="openRenameModal({{ room.id }}, '{{ room.name|escapejs }}')"
+          title="Renommer {{ room.name }}"
+          aria-label="Renommer {{ room.name }}"
+          class="text-yellow-500 dark:text-yellow-400 hover:text-yellow-600 dark:hover:text-yellow-500 transition p-3 rounded-full hover:bg-yellow-100 dark:hover:bg-yellow-900/20"
+        >
+          <i class="fas fa-edit"></i>
+        </button>
+
+        <!-- Supprimer le groupe -->
+        <form
+          method="POST"
+          action="{% url 'delete_room' room.id %}"
+          onsubmit="return confirm('Supprimer le groupe {{ room.name }} ?')"
+        >
           {% csrf_token %}
-          <div>
-            <label for="room_name" class="block text-sm font-medium text-gray-700 mb-1">Nom du groupe</label>
-            <input type="text" name="room_name" id="room_name"
-                   class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-indigo-500 input-focus transition duration-300"
-                   placeholder="Entrez un nom de groupe" required>
-          </div>
-
-          <button type="submit"
-                  class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3 px-4 rounded-lg font-semibold shadow-md hover:shadow-lg transition duration-300 flex items-center justify-center">
-            <i class="fas fa-plus-circle mr-2"></i> Créer / Rejoindre
+          <button
+            type="submit"
+            title="Supprimer"
+            class="text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-500 transition p-3 rounded-full hover:bg-red-100 dark:hover:bg-red-900/20"
+            aria-label="Supprimer {{ room.name }}"
+          >
+            <i class="fas fa-trash"></i>
           </button>
         </form>
       </div>
+      {% endif %}
+    </div>
+  </div>
+{% endfor %}
+
+<!-- Modal Renommage -->
+<div
+  id="rename-modal"
+  class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="rename-modal-title"
+>
+  <div class="bg-white dark:bg-dark-800 rounded-xl p-6 max-w-md w-full shadow-lg relative">
+    <h2 id="rename-modal-title" class="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">
+      Renommer le groupe
+    </h2>
+    <form id="rename-form" method="POST" class="space-y-4">
+      {% csrf_token %}
+      <input
+        type="text"
+        name="new_name"
+        id="rename-input"
+        required
+        class="w-full border border-gray-300 dark:border-dark-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400 dark:focus:ring-yellow-500 bg-white dark:bg-dark-700 text-gray-900 dark:text-gray-100"
+        placeholder="Nouveau nom du groupe"
+        aria-label="Nouveau nom du groupe"
+      />
+      <div class="flex justify-end gap-3">
+        <button
+          type="button"
+          onclick="closeRenameModal()"
+          class="px-4 py-2 rounded bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-400 dark:hover:bg-gray-600 transition"
+        >
+          Annuler
+        </button>
+        <button
+          type="submit"
+          class="px-4 py-2 rounded bg-yellow-400 dark:bg-yellow-500 text-white hover:bg-yellow-500 dark:hover:bg-yellow-600 transition"
+        >
+          Valider
+        </button>
+      </div>
+    </form>
+    <button
+      onclick="closeRenameModal()"
+      aria-label="Fermer la fenêtre"
+      class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition text-2xl font-bold"
+    >&times;</button>
+  </div>
+</div>
+
     </div>
   </div>
 
-  <!-- Liste des groupes -->
-  <div class="relative z-10 w-full max-w-md">
-    <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
-      <div class="p-6">
-        <div class="flex items-center mb-4">
-          <h3 class="text-xl font-semibold text-gray-800 flex items-center">
-            <i class="fas fa-users mr-2 text-indigo-500"></i> Groupes existants
-          </h3>
-          <span class="ml-auto bg-indigo-100 text-indigo-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-            {{ rooms|length }} disponibles
-          </span>
-        </div>
-
-        <div class="mb-3">
-          <input type="text" id="search-room" placeholder="Rechercher un groupe..."
-                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300">
-        </div>
-
-        <div class="space-y-3">
-          {% for room in rooms %}
-            <div class="group-item bg-gray-50 hover:bg-indigo-50 p-4 rounded-lg border border-gray-100 hover:border-indigo-100 flex items-center">
-              <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center mr-3">
-                <i class="fas fa-hashtag text-sm"></i>
-              </div>
-              <a href="/{{ room.name }}/" class="font-medium text-gray-700 hover:text-indigo-600 flex-grow">
-                {{ room.name }}
-              </a>
-              <i class="fas fa-chevron-right text-gray-400 group-hover:text-indigo-500"></i>
-            </div>
-          {% empty %}
-            <div class="text-center py-6">
-              <i class="fas fa-comment-slash text-4xl text-gray-300 mb-3"></i>
-              <p class="text-gray-500">Aucun groupe pour l’instant.</p>
-            </div>
-          {% endfor %}
+  <!-- Formulaire création de groupe (masqué par défaut) -->
+  <div
+    class="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50 hidden transition-opacity duration-300"
+    id="create-group-form"
+  >
+    <div
+      class="bg-white dark:bg-dark-800 rounded-3xl shadow-2xl max-w-md w-full p-8 relative ring-1 ring-gray-200 dark:ring-dark-600"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="create-group-title"
+    >
+      <button
+        id="close-form"
+        class="absolute top-4 right-6 text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 text-3xl font-bold transition"
+        aria-label="Fermer le formulaire"
+      >
+        &times;
+      </button>
+      <div class="flex justify-center mb-6">
+        <div
+          class="bg-gradient-to-r from-indigo-500 to-purple-600 dark:from-indigo-600 dark:to-purple-700 p-4 rounded-full shadow-lg ring-2 ring-indigo-300/50 dark:ring-indigo-500/30"
+        >
+          <i class="fas fa-comments text-white text-3xl"></i>
         </div>
       </div>
+      <h2
+        id="create-group-title"
+        class="text-4xl font-bold text-center text-gray-800 dark:text-gray-100 mb-2"
+      >
+        Créer un Groupe
+      </h2>
+      <p class="text-center text-gray-500 dark:text-gray-400 mb-6">Bienvenue {{ request.user.username }}</p>
+
+      <form method="POST" action="{% url 'checkview' %}" class="space-y-6">
+        {% csrf_token %}
+        <div>
+          <label
+            for="room_name"
+            class="block text-lg font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >Nom du groupe</label
+          >
+          <input
+            type="text"
+            name="room_name"
+            id="room_name"
+            class="w-full px-5 py-4 rounded-2xl border border-gray-300 dark:border-dark-600 focus:border-indigo-500 dark:focus:border-indigo-600 input-focus transition duration-300 text-lg bg-white dark:bg-dark-700 text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500"
+            placeholder="Entrez un nom de groupe"
+            required
+          />
+        </div>
+
+        <button
+          type="submit"
+          class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 dark:from-indigo-600 dark:to-purple-700 text-white py-4 px-6 rounded-2xl font-semibold shadow-lg hover:shadow-xl transition duration-300 flex items-center justify-center gap-3 text-xl ring-2 ring-indigo-300/50 dark:ring-indigo-500/30 hover:from-indigo-600 hover:to-purple-700 dark:hover:from-indigo-700 dark:hover:to-purple-800"
+        >
+          <i class="fas fa-plus-circle"></i> Créer / Rejoindre
+        </button>
+      </form>
     </div>
   </div>
 
-  <div class="mt-8 text-center text-white text-opacity-70 text-sm">
-    <p>© 2025 CodeZone Chat. Tous droits réservés.</p>
-  </div>
+  <!-- Boutons flottants -->
+  <!-- Messages privés -->
+  <a
+    href="{% url 'users' %}"
+    title="Messages privés"
+    class="fixed bottom-20 right-6 bg-pink-600 hover:bg-pink-700 dark:bg-pink-700 dark:hover:bg-pink-800 text-white p-4 rounded-full shadow-lg text-xl z-50 ring-2 ring-pink-300/50 dark:ring-pink-500/30 transition hover:scale-110"
+  >
+    <i class="fas fa-envelope"></i>
+  </a>
 
-  <!-- Bouton flottant pour ouvrir le formulaire -->
-  <button id="open-form"
-          class="fixed bottom-6 right-6 bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-lg text-xl">
+  <!-- Profil -->
+  <a
+    href="{% url 'profile' %}"
+    title="Profil"
+    class="fixed bottom-20 left-6 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-800 text-white p-4 rounded-full shadow-lg text-xl z-50 ring-2 ring-indigo-300/50 dark:ring-indigo-500/30 transition hover:scale-110"
+  >
+    <i class="fas fa-user"></i>
+  </a>
+
+  <!-- Ouvrir formulaire création groupe -->
+  <button
+    id="open-form"
+    class="fixed bottom-6 right-6 bg-gradient-to-br from-indigo-500 to-purple-600 dark:from-indigo-600 dark:to-purple-700 hover:from-indigo-600 hover:to-purple-700 dark:hover:from-indigo-700 dark:hover:to-purple-800 text-white p-5 rounded-full shadow-xl text-xl z-50 ring-2 ring-white/50 transition hover:scale-110 hover:shadow-2xl"
+    aria-label="Créer un groupe"
+  >
     <i class="fas fa-plus"></i>
   </button>
 
-  <!-- JS de recherche -->
+  <!-- Déconnexion -->
+  <a
+    href="{% url 'logout' %}"
+    title="Déconnexion"
+    class="fixed bottom-6 left-6 bg-gray-800 hover:bg-gray-900 dark:bg-gray-700 dark:hover:bg-gray-800 text-white p-4 rounded-full shadow-lg text-xl z-50 ring-2 ring-gray-300/50 dark:ring-gray-500/30 transition hover:scale-110"
+  >
+    <i class="fas fa-power-off"></i>
+  </a>
+
   <script>
+    // Gestion du dark mode
+    const darkModeToggle = document.getElementById('darkModeToggle');
+    const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
+    const currentTheme = localStorage.getItem('theme');
+
+    // Vérifier le thème système ou le thème sauvegardé
+    if (currentTheme === 'dark' || (!currentTheme && prefersDarkScheme.matches)) {
+      document.documentElement.classList.add('dark');
+      darkModeToggle.checked = true;
+    }
+
+    // Basculer entre les thèmes
+    darkModeToggle.addEventListener('change', function() {
+      if (this.checked) {
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+        localStorage.setItem('theme', 'light');
+      }
+    });
+
+    // Ouvrir le formulaire création groupe
+    const openFormBtn = document.getElementById('open-form');
+    const createGroupForm = document.getElementById('create-group-form');
+    const closeFormBtn = document.getElementById('close-form');
+
+    openFormBtn.addEventListener('click', () => {
+      createGroupForm.classList.remove('hidden');
+    });
+
+    closeFormBtn.addEventListener('click', () => {
+      createGroupForm.classList.add('hidden');
+    });
+
+    // Fermer le formulaire si clic en dehors
+    createGroupForm.addEventListener('click', (e) => {
+      if (e.target === createGroupForm) {
+        createGroupForm.classList.add('hidden');
+      }
+    });
+
+    // Partager un groupe
+    function shareGroup(url) {
+      if (navigator.share) {
+        navigator
+          .share({
+            title: 'Rejoignez ce groupe sur CodeZone',
+            url: url,
+          })
+          .then(() => console.log('Partage réussi'))
+          .catch((error) => console.log('Erreur de partage', error));
+      } else {
+        // Fallback: copier dans le presse-papier
+        navigator.clipboard
+          .writeText(url)
+          .then(() => {
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-20 right-6 bg-gray-800 dark:bg-gray-700 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-bounce';
+            toast.textContent = 'Lien copié dans le presse-papier';
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+              toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+              setTimeout(() => toast.remove(), 300);
+            }, 2000);
+          })
+          .catch(() => alert('Impossible de copier le lien'));
+      }
+    }
+
+    // Validation renommage
+    function validateRename(form) {
+      const input = form.new_name;
+      if (!input.value.trim()) {
+        alert('Le nouveau nom du groupe ne peut pas être vide.');
+        return false;
+      }
+      return true;
+    }
+
+    // Filtre recherche groupes
     const searchInput = document.getElementById('search-room');
     searchInput.addEventListener('input', function () {
       const filter = this.value.toLowerCase();
-      document.querySelectorAll('.group-item').forEach(item => {
-        const name = item.innerText.toLowerCase();
-        item.style.display = name.includes(filter) ? '' : 'none';
+      const groups = document.querySelectorAll('.group');
+      groups.forEach((group) => {
+        const name = group.querySelector('a').textContent.toLowerCase();
+        group.style.display = name.includes(filter) ? 'flex' : 'none';
       });
     });
+    
+     let currentRoomId = null;
 
-    // JS pour ouvrir/fermer le formulaire
-    const openBtn = document.getElementById('open-form');
-    const closeBtn = document.getElementById('close-form');
-    const formContainer = document.getElementById('create-group-form');
+  function openRenameModal(roomId, currentName) {
+    currentRoomId = roomId;
+    const modal = document.getElementById('rename-modal');
+    const input = document.getElementById('rename-input');
+    const form = document.getElementById('rename-form');
 
-    openBtn.addEventListener('click', () => {
-      formContainer.classList.remove('hidden');
-      openBtn.classList.add('hidden');
-    });
+    input.value = currentName;
+    modal.classList.remove('hidden');
+    input.focus();
 
-    closeBtn.addEventListener('click', () => {
-      formContainer.classList.add('hidden');
-      openBtn.classList.remove('hidden');
-    });
+    // mise à jour de l'action du formulaire pour le bon room id
+    form.action = `/room/${roomId}/rename/`;
+  }
+
+  function closeRenameModal() {
+    const modal = document.getElementById('rename-modal');
+    modal.classList.add('hidden');
+    currentRoomId = null;
+  }
+
+  // Fermer modal au clic hors du contenu
+  document.getElementById('rename-modal').addEventListener('click', (e) => {
+    if (e.target.id === 'rename-modal') {
+      closeRenameModal();
+    }
+  });
+
+  // Validation simple du formulaire
+  document.getElementById('rename-form').addEventListener('submit', (e) => {
+    const input = document.getElementById('rename-input');
+    if (!input.value.trim()) {
+      e.preventDefault();
+      alert('Le nouveau nom ne peut pas être vide.');
+      input.focus();
+    }
+  });
   </script>
-
 </body>
 </html>
+

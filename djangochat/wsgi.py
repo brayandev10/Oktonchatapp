@@ -8,6 +8,9 @@ https://docs.djangoproject.com/en/4.1/howto/deployment/wsgi/
 """
 
 import os
+from dotenv import load_dotenv  # 1. Charger les variables d'environnement d'abord
+
+load_dotenv()  # Charge .env (doit être placé avant l'initialisation Django)
 
 from django.core.wsgi import get_wsgi_application
 

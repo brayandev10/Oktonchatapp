@@ -1,0 +1,8 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><title>Paiement réussi</title></head>
+<body>
+    <h2>Merci pour votre paiement !</h2>
+    <p>Votre transaction a bien été reçue. Nous vous contacterons bientôt.</p>
+</body>
+</html>
